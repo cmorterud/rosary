@@ -1,4 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap');
+@import '@fontsource/dm-sans/latin-400.css';
+@import '@fontsource/dm-sans/latin-500.css';
+@import '@fontsource/dm-sans/latin-600.css';
+@import '@fontsource/dm-sans/latin-700.css';
+@import '@fontsource/libre-caslon-text/latin-400.css';
+@import '@fontsource/libre-caslon-text/latin-400-italic.css';
 
 :root { font-family: 'DM Sans', sans-serif; color: #253c48; background: #faf9f6; font-synthesis: none; --paper: #faf9f6; --ink: #253c48; --muted: #667174; --line: #dedfd9; --accent: #254d5d; --soft: #eeefe9; --gold: #b49a69; --prayer-size: 1.4rem; color-scheme: light; }
 :root[data-size='large'] { --prayer-size: 1.7rem; }
@@ -124,7 +129,9 @@ summary { cursor: pointer; padding: 18px 0; font-size: .98rem; }
   .brand small { font-size: .52rem; margin-top: 6px; }
   .brand svg { width: 20px; height: 29px; }
   .sidebar-intro { padding: 0; margin: 0; text-align: right; }
-  .sidebar-intro .eyebrow, .sidebar-intro h2 br, #journey, .sidebar-bottom { display: none; }
+  .sidebar-intro .eyebrow, #journey, .sidebar-bottom { display: none; }
+  .sidebar-intro h2 br { display: block; }
+  .mobile-mysteries { display: block; padding: 12px 0; font-size: inherit; }
   .sidebar-intro h2 { font: 500 .84rem/1.4 'DM Sans', sans-serif; margin: 0; }
   .sidebar-intro h2 br::after { content: ' '; }
   .change-button { justify-content: end; font-size: .72rem; gap: 10px; padding: 7px 0 0; }
@@ -139,7 +146,7 @@ summary { cursor: pointer; padding: 18px 0; font-size: .98rem; }
   .brand small { letter-spacing: .12em; }
   .sidebar-intro h2 { font-size: .75rem; }
   .workspace { padding-inline: 22px; min-height: calc(100svh - 85px); }
-  .topbar { min-height: 66px; font-size: .73rem; }
+  .topbar { min-height: 66px; font-size: .73rem; flex-wrap: wrap; padding-block: 8px; }
   .settings-button { font-size: .73rem; gap: 6px; }
   .prayer-surface { padding: 24px 0 6px; min-height: 400px; }
   .prayer-emblem { width: 51px; height: 51px; margin-bottom: 23px; }

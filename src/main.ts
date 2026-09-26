@@ -13,7 +13,7 @@ let set = dailyMystery();
 let sessionDate = localDate();
 let steps = buildRosary(set, state.preferences.fatima);
 let index = 0;
-let resumeCandidate = state.sessions.filter(s => s.step !== 'complete' && s.step !== 'opening-cross').sort((a, b) => b.updated - a.updated)[0];
+let resumeCandidate: Session | undefined = state.sessions.filter(s => s.step !== 'complete' && s.step !== 'opening-cross').sort((a, b) => b.updated - a.updated)[0];
 let noticeDismissed = false;
 const cross = '<svg viewBox="0 0 24 32" fill="none" aria-hidden="true"><path d="M12 2v28M3 11h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
 const arrow = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -27,7 +27,7 @@ app.innerHTML = `
     <div class="sidebar-bottom"><button data-dialog="prayers-dialog">Prayers & guide <span aria-hidden="true">↗</span></button><p>One prayer.<br>One bead.<br>One quiet moment.</p><span class="sidebar-cross" aria-hidden="true">✦</span></div>
   </aside>
   <div class="workspace">
-    <header class="topbar"><span id="date-label"></span><div class="header-controls"><button class="mobile-mysteries" data-dialog="mysteries-dialog">Mysteries</button><button class="settings-button" data-dialog="settings-dialog" aria-label="Open settings"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 17h16M9 4v6m6 4v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Settings</span></button></div></header>
+    <header class="topbar"><span id="date-label"></span><div class="header-controls"><button class="mobile-mysteries" data-dialog="journey-dialog">Journey</button><button class="settings-button" data-dialog="settings-dialog" aria-label="Open settings"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 17h16M9 4v6m6 4v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Settings</span></button></div></header>
     <div id="notice" class="notice" hidden></div>
     <main id="prayer" tabindex="-1">
       <div class="prayer-meta"><span id="section-label" class="eyebrow"></span><span id="step-count"></span></div>
@@ -40,6 +40,7 @@ app.innerHTML = `
     <footer><span>Pray with a peaceful heart.</span><button data-dialog="guide-dialog">How to use this guide</button></footer>
   </div>
   <div id="announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+  <dialog id="journey-dialog" aria-labelledby="journey-title"><div class="dialog-header"><span class="eyebrow">YOUR PLACE IN THE ROSARY</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="journey-title">Prayer journey</h2><nav id="mobile-journey" aria-label="Jump to a mystery"></nav><button class="text-button" data-dialog="prayers-dialog">All prayers & reference</button></dialog>
   <dialog id="mysteries-dialog" aria-labelledby="mysteries-title"><div class="dialog-header"><span class="eyebrow">THE HOLY ROSARY</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="mysteries-title">Choose your mysteries</h2><p class="dialog-description">Follow today’s mysteries, or choose another set. Your place in each is saved.</p><div id="mystery-options"></div><button class="text-button" data-action="today">Return to today’s rosary</button></dialog>
   <dialog id="settings-dialog" aria-labelledby="settings-title"><div class="dialog-header"><span class="eyebrow">MAKE YOURSELF COMFORTABLE</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="settings-title">Prayer settings</h2>
     <label class="setting">Appearance<select id="theme"><option value="system">Use device setting</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
@@ -94,6 +95,7 @@ function render(announce = false) {
   el('step-count').textContent = complete ? 'Complete' : `${index + 1} / ${steps.length}`;
   const sectionNames = ['Opening prayers', ...mysteries[set].items.map(m => m.title), 'Closing prayers'];
   el('journey').innerHTML = sectionNames.map((name, n) => `<button class="journey-item ${n === section ? 'active' : ''} ${n < section ? 'past' : ''}" data-section="${n}" ${n === section ? 'aria-current="step"' : ''}><span class="journey-number" aria-hidden="true">${n < section ? '✓' : n === 0 ? '✝' : n === 6 ? '✧' : n}</span><span>${name}${n === section && section > 0 && section < 6 ? '<small>CURRENT MYSTERY</small>' : ''}</span></button>`).join('');
+  el('mobile-journey').innerHTML = sectionNames.map((name, n) => `<button class="mystery-option" data-section="${n}" ${n === section ? 'aria-current="step"' : ''}>${n > 0 && n < 6 ? `${n}. ` : ''}${name}</button>`).join('');
   el('prayer-content').innerHTML = complete
     ? '<p class="prayer-context">Your rosary is complete</p><h1>Go in peace.</h1><p class="completion-text">Carry this quiet moment with you<br>into the rest of your day.</p><p class="completion-date">' + dateText(sessionDate) + ' · ' + mysteries[set].name + ' Mysteries</p>'
     : `<p class="prayer-context">${section > 0 && section < 6 && step.prayer ? mysteries[set].items[section - 1].title : step.bead ? ['For an increase in faith', 'For an increase in hope', 'For an increase in charity'][step.bead - 1] : step.scripture ? 'Pause to contemplate this mystery' : section === 0 ? 'Let us begin in the presence of God' : 'As we bring our prayer to a close'}</p><h1>${step.title}</h1>${step.scripture ? `<p class="scripture">${step.scripture}</p>` : ''}<div class="prayer-text ${step.scripture ? 'reflection' : ''} ${step.prayer === 'creed' || step.prayer === 'queen' || step.prayer === 'closing' ? 'long-prayer' : ''}">${escape(step.text)}</div>`;
@@ -133,7 +135,7 @@ app.addEventListener('click', event => {
   if (!target) return;
   if (target.dataset.dialog) openDialog(target.dataset.dialog);
   if (target.hasAttribute('data-close')) closeDialogs();
-  if (target.dataset.section) { navigate(steps.findIndex(step => step.section === Number(target.dataset.section))); el('prayer').focus(); }
+  if (target.dataset.section) { closeDialogs(); navigate(steps.findIndex(step => step.section === Number(target.dataset.section))); el('prayer').focus(); }
   if (target.dataset.set) selectSet(target.dataset.set as MysterySet);
   switch (target.dataset.action) {
     case 'today': event.preventDefault(); selectSet(dailyMystery()); break;
