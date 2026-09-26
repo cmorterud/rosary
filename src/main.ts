@@ -32,10 +32,12 @@ app.innerHTML = `
     <main id="prayer" tabindex="-1">
       <div class="prayer-meta"><span id="section-label" class="eyebrow"></span><span id="step-count"></span></div>
       <div class="prayer-surface"><div class="prayer-emblem">${cross}</div><div id="prayer-content"></div><div id="beads"></div></div>
+      <div class="prayer-controls">
       <div class="navigation"><button id="previous" class="previous" aria-label="Previous prayer"><span aria-hidden="true">←</span><span>Previous</span></button><button id="next" class="primary">Continue ${arrow}</button></div>
       <p class="keyboard-hint">Go at your own pace <span>·</span> <kbd>Space</kbd> or <kbd>→</kbd> to continue</p>
       <div class="progress-track" role="progressbar" aria-label="Rosary progress" aria-valuemin="0" aria-valuemax="100"><div id="progress-fill"></div></div>
       <p id="save-status" class="save-status"></p>
+      </div>
     </main>
     <footer><span>Pray with a peaceful heart.</span><button data-dialog="guide-dialog">How to use this guide</button></footer>
   </div>
@@ -167,3 +169,10 @@ el('print').addEventListener('click', () => {
   window.print();
 });
 applyPreferences(); render();
+
+// Reserve the actual dock height, including wrapped text and device safe areas,
+// so the end of a long prayer can always be scrolled clear of the controls.
+const controls = document.querySelector<HTMLElement>('.prayer-controls')!;
+new ResizeObserver(() => {
+  document.documentElement.style.setProperty('--controls-height', `${controls.getBoundingClientRect().height}px`);
+}).observe(controls);

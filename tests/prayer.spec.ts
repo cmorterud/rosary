@@ -91,3 +91,28 @@ test('accessible light, dark, settings, and enlarged mobile prayer', async ({pag
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
 });
+
+for (const viewport of [{width: 1440, height: 900}, {width: 768, height: 1024}, {width: 390, height: 844}, {width: 320, height: 568}]) {
+  test(`prayer controls stay fixed through every step at ${viewport.width}px`, async ({page}) => {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => document.fonts.ready);
+    const next = page.locator('#next');
+    const previous = page.locator('#previous');
+    const nextBounds = (await next.boundingBox())!;
+    const previousBounds = (await previous.boundingBox())!;
+    expect(nextBounds.y + nextBounds.height).toBeLessThanOrEqual(viewport.height);
+    for (let step = 0; step < 80; step++) {
+      await next.click();
+      expect(await next.boundingBox()).toEqual(nextBounds);
+      expect(await previous.boundingBox()).toEqual(previousBounds);
+    }
+    await previous.click();
+    expect(await next.boundingBox()).toEqual(nextBounds);
+    await previous.click(); // Long concluding prayer.
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    expect(await next.boundingBox()).toEqual(nextBounds);
+    const text = (await page.locator('.prayer-text').boundingBox())!;
+    const dock = (await page.locator('.prayer-controls').boundingBox())!;
+    expect(text.y + text.height).toBeLessThanOrEqual(dock.y);
+  });
+}
