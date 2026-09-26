@@ -61,6 +61,7 @@ svg { width: 24px; height: 24px; flex-shrink: 0; }
 .prayer-meta .eyebrow { font-size: .65rem; }
 #step-count { font-size: .73rem; letter-spacing: .06em; white-space: nowrap; }
 .prayer-surface { text-align: center; max-width: 670px; margin: 0 auto; padding: 38px 10px 12px; min-height: 495px; display: flex; flex-direction: column; justify-content: center; }
+.prayer-surface:focus:not(:focus-visible) { outline: none; }
 .prayer-emblem { width: 66px; height: 66px; margin: 0 auto 25px; border: 1px solid var(--line); border-radius: 50%; display: grid; place-items: center; color: var(--gold); }
 .prayer-emblem svg { width: 21px; height: 31px; }
 .prayer-context { font-size: .81rem; color: var(--muted); margin: 0 0 16px; line-height: 1.6; }
@@ -87,6 +88,7 @@ kbd { font: inherit; border: 1px solid var(--line); border-radius: 4px; padding:
 .progress-track { height: 3px; max-width: 530px; margin: auto; background: var(--line); border-radius: 2px; overflow: hidden; }
 #progress-fill { height: 100%; background: var(--gold); transition: width .25s ease; }
 .save-status { font-size: .7rem; color: var(--muted); text-align: center; margin: 13px 0 24px; }
+.scroll-cue { display: none; }
 /* Prayer length must never move the navigation targets. */
 :root { --sidebar-width: 292px; --controls-height: 190px; }
 .workspace { padding-bottom: var(--controls-height); }
@@ -131,7 +133,8 @@ summary { cursor: pointer; padding: 18px 0; font-size: .98rem; }
 @media (max-width: 1100px) { :root { --sidebar-width: 260px; } .sidebar { width: 260px; padding-inline: 20px; } .workspace { margin-left: 260px; padding-inline: 32px; } .prayer-text { font-size: calc(var(--prayer-size) * .94); } }
 @media (max-width: 860px) {
   :root { --sidebar-width: 0px; }
-  .sidebar { position: static; width: auto; padding: 22px 24px; flex-direction: row; align-items: center; justify-content: space-between; gap: 18px; overflow: visible; }
+  #app { height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .sidebar { position: static; width: auto; flex: none; padding: 22px 24px; flex-direction: row; align-items: center; justify-content: space-between; gap: 18px; overflow: visible; }
   .brand { font-size: 1.14rem; gap: 11px; }
   .brand svg { width: 20px; height: 29px; }
   .sidebar-intro { padding: 0; margin: 0; text-align: right; }
@@ -141,25 +144,35 @@ summary { cursor: pointer; padding: 18px 0; font-size: .98rem; }
   .sidebar-intro h2 { font: 500 .84rem/1.4 'DM Sans', sans-serif; margin: 0; }
   .sidebar-intro h2 br::after { content: ' '; }
   .change-button { justify-content: end; font-size: .72rem; gap: 10px; padding: 7px 0 0; }
-  .workspace { margin-left: 0; padding-inline: 28px; }
-  .topbar { min-height: 72px; }
-  .prayer-surface { min-height: 470px; }
+  .workspace { margin-left: 0; padding-inline: 28px; min-height: 0; flex: 1; overflow: hidden; }
+  .topbar { min-height: 72px; flex: none; }
+  #prayer { display: flex; flex-direction: column; min-height: 0; overflow: hidden; position: relative; }
+  .prayer-surface { min-height: 0; width: 100%; flex: 1; display: block; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 0 10px; }
+  .prayer-layout { min-height: 100%; display: flex; flex-direction: column; justify-content: center; padding-block: 24px; }
+  .scroll-cue:not([hidden]) { display: block; position: absolute; bottom: 0; left: 0; right: 0; pointer-events: none; text-align: center; font-size: .73rem; font-weight: 600; color: var(--ink); padding: 25px 0 10px; background: linear-gradient(transparent, var(--paper) 50%); }
+  .prayer-emblem, #beads { flex: none; }
   .prayer-meta { margin-bottom: 8px; }
   #prayer { padding-top: 25px; }
+  .notice { flex: none; }
+  footer { display: none; }
 }
 @media (max-width: 520px) {
   .sidebar { padding: 20px; }
   .sidebar-intro h2 { font-size: .75rem; }
-  .workspace { padding-inline: 22px; min-height: calc(100svh - 85px); }
+  .workspace { padding-inline: 22px; }
   .topbar { min-height: 66px; font-size: .73rem; flex-wrap: wrap; padding-block: 8px; }
   .settings-button { font-size: .73rem; gap: 6px; }
-  .prayer-surface { padding: 24px 0 6px; min-height: 400px; }
+  .prayer-surface { padding-inline: 0; }
+  .prayer-layout { padding-block: 10px; }
+  .prayer-emblem { display: none; }
   .prayer-emblem { width: 51px; height: 51px; margin-bottom: 23px; }
   .prayer-emblem svg { height: 25px; }
-  h1 { font-size: 2rem; margin-bottom: 24px; }
-  .prayer-text { font-size: calc(var(--prayer-size) * .84); line-height: 1.8; }
-  .prayer-text.long-prayer { font-size: calc(var(--prayer-size) * .76); line-height: 1.9; }
-  .prayer-context { font-size: .75rem; }
+  h1 { font-size: 2rem; margin-bottom: 12px; }
+  .prayer-text { font-size: calc(var(--prayer-size) * .84); line-height: 1.55; }
+  .prayer-text.long-prayer { font-size: calc(var(--prayer-size) * .76); line-height: 1.65; }
+  .prayer-context { font-size: .75rem; margin-bottom: 8px; }
+  .bead-row { margin: 20px 0 12px; }
+  .quiet-rule { margin: 18px auto 6px; }
   .prayer-meta .eyebrow { font-size: .58rem; letter-spacing: .1em; }
   .navigation { gap: 20px; margin-top: 18px; }
   .prayer-controls { padding-inline: 22px; }
@@ -169,7 +182,6 @@ summary { cursor: pointer; padding: 18px 0; font-size: .98rem; }
   .keyboard-hint { font-size: 0; margin: 19px 0 24px; }
   .keyboard-hint::after { content: 'Go at your own pace. Tap Continue when you’re ready.'; font-size: .68rem; }
   .keyboard-hint span, .keyboard-hint kbd { display: none; }
-  footer { font-size: .66rem; gap: 8px; }
   .bead-row { gap: 15px; }
   dialog { padding: 22px; }
   .setting { gap: 12px; }

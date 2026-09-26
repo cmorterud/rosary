@@ -43,14 +43,12 @@ test('reload offers exact saved position and settings preserve the current bead'
 
 test('mobile navigation, mystery selection, reference, and layouts', async ({ page }) => {
   await page.setViewportSize({width: 390, height: 844});
-  await page.screenshot({path: 'test-results/mobile-opening.png', fullPage: true});
   await page.getByRole('button', {name: 'Journey', exact: true}).click();
   await page.locator('#mobile-journey [data-section="1"]').click();
   await expect(page.locator('h1')).toHaveText('The Annunciation');
   await page.locator('#next').click();
   await page.locator('#next').click();
   await expect(page.locator('.bead-count')).toHaveText('Hail Mary 1 of 10');
-  await page.screenshot({path: 'test-results/mobile-bead.png', fullPage: true});
   await page.getByRole('button', {name: 'Change mysteries'}).click();
   await page.getByRole('button', {name: 'Sorrowful Mysteries'}).click();
   await expect(page.locator('#set-name')).toContainText('Sorrowful');
@@ -63,7 +61,6 @@ test('mobile navigation, mystery selection, reference, and layouts', async ({ pa
     await page.setViewportSize({width, height: 900});
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
-  await page.screenshot({path: 'test-results/desktop-opening.png', fullPage: true});
 });
 
 test('yesterday can be resumed without changing the default daily mysteries', async ({page}) => {
@@ -122,10 +119,42 @@ for (const viewport of [{width: 1440, height: 900}, {width: 768, height: 1024}, 
     await previous.click();
     expect(await next.boundingBox()).toEqual(nextBounds);
     await previous.click(); // Long concluding prayer.
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    if (viewport.width <= 860) await page.locator('.prayer-surface').evaluate(element => element.scrollTop = element.scrollHeight);
+    else await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     expect(await next.boundingBox()).toEqual(nextBounds);
     const text = (await page.locator('.prayer-text').boundingBox())!;
     const dock = (await page.locator('.prayer-controls').boundingBox())!;
     expect(text.y + text.height).toBeLessThanOrEqual(dock.y);
+  });
+}
+
+for (const viewport of [{width: 390, height: 844}, {width: 320, height: 568}, {width: 768, height: 1024}]) {
+  test(`mobile prayer area stays the same size at ${viewport.width}px`, async ({page}) => {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => document.fonts.ready);
+    const surface = page.locator('.prayer-surface');
+    await expect(page.locator('h1')).toHaveText('Sign of the Cross');
+    await expect(surface).toBeVisible();
+    const starting = (await surface.boundingBox())!;
+    const buttons = (await page.locator('#next').boundingBox())!;
+    const metrics = () => page.evaluate(() => {
+      const area = document.querySelector('.prayer-surface')!;
+      return { pageHeight: document.documentElement.scrollHeight, areaHeight: area.clientHeight, contentHeight: area.scrollHeight, scrollTop: area.scrollTop };
+    });
+    expect((await metrics()).pageHeight).toBeLessThanOrEqual(viewport.height);
+    await page.locator('#next').click(); // Apostles' Creed: a long prayer.
+    await expect(page.locator('h1')).toHaveText('The Apostles’ Creed');
+    expect(await surface.boundingBox()).toEqual(starting);
+    expect(await page.locator('#next').boundingBox()).toEqual(buttons);
+    const long = await metrics();
+    expect(long.contentHeight).toBeGreaterThan(long.areaHeight);
+    await expect(page.locator('#scroll-cue')).toBeVisible();
+    await surface.evaluate(element => element.scrollTop = element.scrollHeight);
+    expect((await metrics()).scrollTop).toBeGreaterThan(0);
+    await expect(page.locator('#scroll-cue')).toBeHidden();
+    await page.locator('#next').click();
+    expect((await metrics()).scrollTop).toBe(0);
+    expect(await surface.boundingBox()).toEqual(starting);
+    expect((await metrics()).pageHeight).toBeLessThanOrEqual(viewport.height);
   });
 }

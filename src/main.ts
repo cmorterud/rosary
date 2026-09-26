@@ -31,7 +31,8 @@ app.innerHTML = `
     <div id="notice" class="notice" hidden></div>
     <main id="prayer" tabindex="-1">
       <div class="prayer-meta"><span id="section-label" class="eyebrow"></span><span id="step-count"></span></div>
-      <div class="prayer-surface"><div class="prayer-emblem">${cross}</div><div id="prayer-content"></div><div id="beads"></div></div>
+      <div class="prayer-surface" tabindex="0" aria-label="Prayer text"><div class="prayer-layout"><div class="prayer-emblem">${cross}</div><div id="prayer-content"></div><div id="beads"></div></div></div>
+      <div id="scroll-cue" class="scroll-cue" hidden aria-hidden="true">Scroll to read the rest ↓</div>
       <div class="prayer-controls">
       <div class="navigation"><button id="previous" class="previous" aria-label="Previous prayer"><span aria-hidden="true">←</span><span>Previous</span></button><button id="next" class="primary">Continue ${arrow}</button></div>
       <p class="keyboard-hint">Go at your own pace <span>·</span> <kbd>Space</kbd> or <kbd>→</kbd> to continue</p>
@@ -42,7 +43,7 @@ app.innerHTML = `
     <footer><span>Pray with a peaceful heart.</span><button data-dialog="guide-dialog">How to use this guide</button></footer>
   </div>
   <div id="announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
-  <dialog id="journey-dialog" aria-labelledby="journey-title"><div class="dialog-header"><span class="eyebrow">YOUR PLACE IN THE ROSARY</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="journey-title">Prayer journey</h2><nav id="mobile-journey" aria-label="Jump to a mystery"></nav><button class="text-button" data-dialog="prayers-dialog">All prayers & reference</button></dialog>
+  <dialog id="journey-dialog" aria-labelledby="journey-title"><div class="dialog-header"><span class="eyebrow">YOUR PLACE IN THE ROSARY</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="journey-title">Prayer journey</h2><nav id="mobile-journey" aria-label="Jump to a mystery"></nav><button class="text-button" data-dialog="prayers-dialog">All prayers & reference</button><br><button class="text-button" data-dialog="guide-dialog">How to use this guide</button></dialog>
   <dialog id="mysteries-dialog" aria-labelledby="mysteries-title"><div class="dialog-header"><span class="eyebrow">THE HOLY ROSARY</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="mysteries-title">Choose your mysteries</h2><p class="dialog-description">Follow today’s mysteries, or choose another set. Your place in each is saved.</p><div id="mystery-options"></div><button class="text-button" data-action="today">Return to today’s rosary</button></dialog>
   <dialog id="settings-dialog" aria-labelledby="settings-title"><div class="dialog-header"><span class="eyebrow">MAKE YOURSELF COMFORTABLE</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="settings-title">Prayer settings</h2>
     <label class="setting">Appearance<select id="theme"><option value="system">Use device setting</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
@@ -53,7 +54,7 @@ app.innerHTML = `
   </dialog>
   <dialog id="restart-dialog" aria-labelledby="restart-title"><div class="dialog-header"><span class="eyebrow">A FRESH BEGINNING</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="restart-title">Start from the beginning?</h2><p>This resets your place in the current rosary. Your preferences and other rosaries stay saved.</p><div class="dialog-actions"><button class="secondary" data-close>Keep my place</button><button class="primary" data-action="restart">Start again</button></div></dialog>
   <dialog id="prayers-dialog" class="wide-dialog" aria-labelledby="prayers-title"><div class="dialog-header"><span class="eyebrow">A PRAYER COMPANION</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="prayers-title">Prayers of the rosary</h2><p class="dialog-description">Traditional English wording. You can print this collection for use away from a screen.</p>${Object.values(prayers).map(p => `<details><summary>${p.title}</summary><p class="reference-prayer">${escape(p.text)}</p></details>`).join('')}<button class="text-button" id="print">Print prayers</button><p class="source-note">Sequence reviewed against the <a href="https://www.usccb.org/how-to-pray-the-rosary" target="_blank" rel="noopener noreferrer">USCCB rosary guide</a>. Prayer wording varies by tradition. Mystery reflections are original, brief invitations to prayer; Scripture references are provided for further reading.</p></dialog>
-  <dialog id="guide-dialog" aria-labelledby="guide-title"><div class="dialog-header"><span class="eyebrow">AT YOUR OWN PACE</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="guide-title">A little guidance</h2><p>Read each prayer, then tap Continue. Every Hail Mary has its own bead and number, so you don’t need to keep count.</p><p>On a keyboard, use Space, Enter, or the right arrow to continue. Use the left arrow to go back. When a button or menu has focus, the keyboard operates that control instead.</p><p>The journey menu lets you jump to a mystery. Your progress is saved in this browser whenever you move to another prayer.</p><p>Today’s mysteries follow your device’s local date. Advent Sundays use the Joyful Mysteries; Lent Sundays use the Sorrowful Mysteries; other Sundays use the Glorious Mysteries. You can choose another set at any time.</p><button class="primary" data-close>Return to prayer</button></dialog>
+  <dialog id="guide-dialog" aria-labelledby="guide-title"><div class="dialog-header"><span class="eyebrow">AT YOUR OWN PACE</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="guide-title">A little guidance</h2><p>Read each prayer, then tap Continue. Every Hail Mary has its own bead and number, so you don’t need to keep count. On a phone, longer prayers scroll within the prayer area.</p><p>On a keyboard, use Space, Enter, or the right arrow to continue. Use the left arrow to go back. When a button or menu has focus, the keyboard operates that control instead.</p><p>The journey menu lets you jump to a mystery. Your progress is saved in this browser whenever you move to another prayer.</p><p>Today’s mysteries follow your device’s local date. Advent Sundays use the Joyful Mysteries; Lent Sundays use the Sorrowful Mysteries; other Sundays use the Glorious Mysteries. You can choose another set at any time.</p><button class="primary" data-close>Return to prayer</button></dialog>
 `;
 
 function el<T extends HTMLElement = HTMLElement>(id: string) { return document.getElementById(id) as T; }
@@ -110,14 +111,21 @@ function render(announce = false) {
   el('save-status').textContent = storageAvailable ? 'Your place is saved on this device' : 'Saving is unavailable in this browser. Keep this page open to hold your place.';
   el('mystery-options').innerHTML = (Object.keys(mysteries) as MysterySet[]).map(key => `<button class="mystery-option ${key === set ? 'selected' : ''}" data-set="${key}" aria-pressed="${key === set}"><span>${mysteries[key].name} Mysteries<small>${mysteries[key].days}</small></span>${key === dailyMystery() ? '<span class="today-tag">TODAY</span>' : ''}<span aria-hidden="true">${key === set ? '✓' : '↗'}</span></button>`).join('');
   renderNotice();
+  updateScrollCue();
   if (announce) el('announcement').textContent = complete ? 'Rosary complete. Go in peace.' : `${sectionNames[section]}. ${step.title}.${step.bead ? ` Hail Mary ${step.bead} of ${step.beads}.` : ''}`;
+}
+function updateScrollCue() {
+  const surface = document.querySelector<HTMLElement>('.prayer-surface')!;
+  el('scroll-cue').hidden = surface.scrollHeight <= surface.clientHeight + 4 || surface.scrollTop + surface.clientHeight >= surface.scrollHeight - 4;
 }
 function navigate(nextIndex: number) {
   index = Math.max(0, Math.min(steps.length, nextIndex));
   resumeCandidate = undefined;
   noticeDismissed = true;
   saveProgress(); render(true);
-  el('prayer').scrollIntoView({ block: 'start', behavior: 'instant' });
+  document.querySelector<HTMLElement>('.prayer-surface')!.scrollTop = 0;
+  updateScrollCue();
+  if (!matchMedia('(max-width: 860px)').matches) el('prayer').scrollIntoView({ block: 'start', behavior: 'instant' });
 }
 function closeDialogs() { document.querySelectorAll<HTMLDialogElement>('dialog[open]').forEach(d => d.close()); }
 function openDialog(id: string) {
@@ -128,7 +136,10 @@ function selectSet(next: MysterySet, date = localDate(), step?: string) {
   const saved = state.sessions.find(s => s.set === set && s.date === sessionDate);
   index = resolveStep(steps, step ?? saved?.step ?? 'opening-cross');
   resumeCandidate = undefined; noticeDismissed = false;
-  closeDialogs(); render(true); el('prayer').focus();
+  closeDialogs(); render(true);
+  document.querySelector<HTMLElement>('.prayer-surface')!.scrollTop = 0;
+  updateScrollCue();
+  el('prayer').focus();
 }
 el('next').addEventListener('click', () => index === steps.length ? openDialog('restart-dialog') : navigate(index + 1));
 el('previous').addEventListener('click', () => navigate(index - 1));
@@ -169,6 +180,8 @@ el('print').addEventListener('click', () => {
   window.print();
 });
 applyPreferences(); render();
+document.querySelector<HTMLElement>('.prayer-surface')!.addEventListener('scroll', updateScrollCue, { passive: true });
+new ResizeObserver(updateScrollCue).observe(document.querySelector<HTMLElement>('.prayer-layout')!);
 
 // Reserve the actual dock height, including wrapped text and device safe areas,
 // so the end of a long prayer can always be scrolled clear of the controls.
