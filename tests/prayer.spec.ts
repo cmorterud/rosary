@@ -78,6 +78,19 @@ test('yesterday can be resumed without changing the default daily mysteries', as
   await expect(page.locator('#set-name')).toContainText('Glorious');
 });
 
+test('homepage follows the seasonal Sunday mysteries', async ({page}) => {
+  for (const [date, expected] of [
+    ['2026-02-22T12:00:00', 'Sorrowful'],
+    ['2026-04-05T12:00:00', 'Glorious'],
+    ['2026-11-29T12:00:00', 'Joyful'],
+    ['2026-12-27T12:00:00', 'Glorious'],
+  ]) {
+    await page.clock.setSystemTime(new Date(date));
+    await page.reload();
+    await expect(page.locator('#set-name')).toContainText(expected);
+  }
+});
+
 test('accessible light, dark, settings, and enlarged mobile prayer', async ({page}) => {
   await expect(page.locator('h1')).toHaveText('Sign of the Cross');
   expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);

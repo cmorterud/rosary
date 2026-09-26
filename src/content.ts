@@ -2,7 +2,7 @@ export type MysterySet = 'joyful' | 'luminous' | 'sorrowful' | 'glorious';
 export type Mystery = { title: string; scripture: string; reflection: string };
 
 export const mysteries: Record<MysterySet, { name: string; days: string; items: Mystery[] }> = {
-  joyful: { name: 'Joyful', days: 'Monday & Saturday', items: [
+  joyful: { name: 'Joyful', days: 'Monday & Saturday · Advent Sundays', items: [
     { title: 'The Annunciation', scripture: 'Luke 1:26–38', reflection: 'Mary welcomes God’s invitation. Bring to mind the places in your life where you are being asked to trust.' },
     { title: 'The Visitation', scripture: 'Luke 1:39–56', reflection: 'Mary goes in haste to Elizabeth. Consider how you might carry Christ’s love to someone who needs it.' },
     { title: 'The Nativity', scripture: 'Luke 2:1–20', reflection: 'Jesus is born in the simplicity of Bethlehem. Make room for him in the ordinary moments of your day.' },
@@ -16,14 +16,14 @@ export const mysteries: Record<MysterySet, { name: string; days: string; items: 
     { title: 'The Transfiguration', scripture: 'Matthew 17:1–8', reflection: 'The disciples glimpse the glory of Christ. Pause to listen for his voice amid the noise of life.' },
     { title: 'The Institution of the Eucharist', scripture: 'Matthew 26:26–29', reflection: 'Jesus gives himself to his disciples. Give thanks for his presence and his generous love.' },
   ] },
-  sorrowful: { name: 'Sorrowful', days: 'Tuesday & Friday', items: [
+  sorrowful: { name: 'Sorrowful', days: 'Tuesday & Friday · Lent Sundays', items: [
     { title: 'The Agony in the Garden', scripture: 'Matthew 26:36–46', reflection: 'Jesus prays in his anguish. Bring your fears to the Father and pray for those who feel alone.' },
     { title: 'The Scourging at the Pillar', scripture: 'John 19:1', reflection: 'Jesus endures suffering. Hold in prayer those whose bodies or spirits are wounded.' },
     { title: 'The Crowning with Thorns', scripture: 'Matthew 27:27–31', reflection: 'Jesus is mocked and crowned with thorns. Ask for courage and gentleness in the face of cruelty.' },
     { title: 'The Carrying of the Cross', scripture: 'Luke 23:26–32', reflection: 'Jesus carries the cross to Calvary. Pray for strength to bear your burdens and to help carry another’s.' },
     { title: 'The Crucifixion', scripture: 'Luke 23:33–46', reflection: 'Jesus gives his life in love. Stay with him at the cross and receive the mercy he offers.' },
   ] },
-  glorious: { name: 'Glorious', days: 'Wednesday & Sunday', items: [
+  glorious: { name: 'Glorious', days: 'Wednesday · most Sundays', items: [
     { title: 'The Resurrection', scripture: 'Luke 24:1–12', reflection: 'Christ is risen. Bring the places that feel lifeless to the hope of his resurrection.' },
     { title: 'The Ascension', scripture: 'Acts 1:6–11', reflection: 'Jesus returns to the Father. Ask for the hope to follow him and the courage to carry on his work.' },
     { title: 'The Descent of the Holy Spirit', scripture: 'Acts 2:1–13', reflection: 'The Holy Spirit fills the disciples. Pray for the wisdom and love you need today.' },

@@ -17,7 +17,7 @@ Open the URL printed by Vite. For browser tests, install Google Chrome, then run
 
 ## Prayer experience
 
-- The homepage chooses mysteries by the visitor's local weekday. Sundays use Glorious year-round; any set can be selected manually.
+- The homepage chooses mysteries by the visitor's local date. Sundays use Joyful during Advent, Sorrowful during Lent, and Glorious otherwise; any set can be selected manually.
 - All opening prayers, five decades (one step per Hail Mary), optional Fatima prayers, and closing prayers are included.
 - Continue or tap the next button; Space, Enter, and Right Arrow advance while Left Arrow goes back when focus is on the prayer page. Focused controls retain native keyboard behavior.
 - Each date and mystery set has its own saved position. Returning visitors can resume explicitly; the homepage still defaults to today's mysteries.
@@ -38,4 +38,4 @@ The sequence and mystery schedule were reviewed against the [USCCB rosary guide]
 
 Relative asset URLs work on a repository subpath and on a future custom domain. There is no client-side URL router, so page refreshes do not require server rewrite rules. Add and verify a custom domain through GitHub Pages settings when ready, then enforce HTTPS. No domain is preconfigured.
 
-Libre Caslon Text and DM Sans are bundled locally with the site; there are no third-party font requests or analytics. Offline/PWA support, audio, accounts, and seasonal Sunday changes are not part of this version.
+Libre Caslon Text and DM Sans are bundled locally with the site; there are no third-party font requests or analytics. Offline/PWA support, audio, and accounts are not part of this version.

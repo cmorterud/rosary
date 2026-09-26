@@ -9,7 +9,40 @@ export type Step = {
 export function localDate(date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
+
+// Gregorian Easter (Meeus/Jones/Butcher). Work in calendar days so daylight
+// saving changes cannot move a Sunday into the wrong season.
+function easterUtc(year: number): number {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const offset = h + l - 7 * m + 114;
+  return Date.UTC(year, Math.floor(offset / 31) - 1, offset % 31 + 1);
+}
+
 export function dailyMystery(date = new Date()): MysterySet {
+  if (date.getDay() === 0) {
+    const year = date.getFullYear();
+    const day = Date.UTC(year, date.getMonth(), date.getDate());
+    const easter = easterUtc(year);
+    const dayMs = 24 * 60 * 60 * 1000;
+    // First Sunday of Lent through Palm Sunday; Easter returns to Glorious.
+    if (day >= easter - 42 * dayMs && day < easter) return 'sorrowful';
+
+    // Advent has four Sundays, ending on the last Sunday before Christmas.
+    const christmasEve = Date.UTC(year, 11, 24);
+    const lastAdventSunday = christmasEve - new Date(christmasEve).getUTCDay() * dayMs;
+    if (day >= lastAdventSunday - 21 * dayMs && day <= lastAdventSunday) return 'joyful';
+  }
   return (['glorious', 'joyful', 'sorrowful', 'glorious', 'luminous', 'sorrowful', 'joyful'] as const)[date.getDay()];
 }
 export function buildRosary(set: MysterySet, fatima = true): Step[] {
