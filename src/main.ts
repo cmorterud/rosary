@@ -15,7 +15,7 @@ let steps = buildRosary(set, state.preferences.fatima);
 let index = 0;
 let resumeCandidate: Session | undefined = state.sessions.filter(s => s.step !== 'complete' && s.step !== 'opening-cross').sort((a, b) => b.updated - a.updated)[0];
 let noticeDismissed = false;
-const cross = '<svg viewBox="0 0 24 32" fill="none" aria-hidden="true"><path d="M12 2v28M3 11h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+const cross = '<svg viewBox="0 0 24 32" fill="none" aria-hidden="true"><path d="M12 1v30M3 8h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
 const arrow = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const escape = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
