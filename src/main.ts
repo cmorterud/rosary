@@ -21,10 +21,10 @@ const escape = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '
 
 app.innerHTML = `
   <aside class="sidebar" aria-label="Rosary navigation">
-    <a class="brand" href="#" data-action="today">${cross}<span>Daily Rosary<small>A MOMENT WITH GOD</small></span></a>
+    <a class="brand" href="#" data-action="today">${cross}<span>Daily Rosary</span></a>
     <div class="sidebar-intro"><span class="eyebrow">YOUR DAILY PRAYER</span><h2 id="set-name"></h2><button class="change-button" data-dialog="mysteries-dialog">Change mysteries <span aria-hidden="true">↗</span></button></div>
     <nav id="journey" aria-label="Prayer journey"></nav>
-    <div class="sidebar-bottom"><button data-dialog="prayers-dialog">Prayers & guide <span aria-hidden="true">↗</span></button><p>One prayer.<br>One bead.<br>One quiet moment.</p><span class="sidebar-cross" aria-hidden="true">✦</span></div>
+    <div class="sidebar-bottom"><button data-dialog="prayers-dialog">Prayers & guide <span aria-hidden="true">↗</span></button></div>
   </aside>
   <div class="workspace">
     <header class="topbar"><span id="date-label"></span><div class="header-controls"><button class="mobile-mysteries" data-dialog="journey-dialog">Journey</button><button class="settings-button" data-dialog="settings-dialog" aria-label="Open settings"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 17h16M9 4v6m6 4v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Settings</span></button></div></header>
