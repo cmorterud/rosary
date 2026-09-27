@@ -34,10 +34,10 @@ The sequence and mystery schedule were reviewed against the [USCCB rosary guide]
 1. Create a public GitHub repository (e.g. `rosary`) and push this project on `main`.
 2. In the repository's **Settings → Pages**, choose **GitHub Actions** as the source.
 3. Run **Test and deploy to GitHub Pages** from Actions (or push to `main`). It tests, builds, and publishes `dist/`.
-4. The site is available at `https://USERNAME.github.io/rosary/`.
+4. The site is available at [rosaryonline.org](https://rosaryonline.org/); the GitHub Pages project URL redirects there.
 
-Relative asset URLs work on a repository subpath and on a future custom domain. There is no client-side URL router, so page refreshes do not require server rewrite rules. Add and verify a custom domain through GitHub Pages settings when ready, then enforce HTTPS. No domain is preconfigured.
+Relative asset URLs work on the repository subpath and at the custom domain root. There is no client-side URL router, so page refreshes do not require server rewrite rules. The custom domain and HTTPS are configured in GitHub Pages settings.
 
-The social preview and 180px touch icon are committed under `public/`. Regenerate them after a brand change with `node scripts/generate-share-assets.mjs` (requires Google Chrome). The page's Open Graph metadata uses the deployed `https://codymorterud.com/rosary/` address.
+The social preview and 180px touch icon are committed under `public/`. Regenerate them after a brand change with `node scripts/generate-share-assets.mjs` (requires Google Chrome). The page's Open Graph metadata uses the deployed `https://rosaryonline.org/` address.
 
 Libre Caslon Text and DM Sans are bundled locally with the site; there are no third-party font requests or analytics. Offline/PWA support, audio, and accounts are not part of this version.
