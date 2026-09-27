@@ -38,4 +38,6 @@ The sequence and mystery schedule were reviewed against the [USCCB rosary guide]
 
 Relative asset URLs work on a repository subpath and on a future custom domain. There is no client-side URL router, so page refreshes do not require server rewrite rules. Add and verify a custom domain through GitHub Pages settings when ready, then enforce HTTPS. No domain is preconfigured.
 
+The social preview and 180px touch icon are committed under `public/`. Regenerate them after a brand change with `node scripts/generate-share-assets.mjs` (requires Google Chrome). The page's Open Graph metadata uses the deployed `https://codymorterud.com/rosary/` address.
+
 Libre Caslon Text and DM Sans are bundled locally with the site; there are no third-party font requests or analytics. Offline/PWA support, audio, and accounts are not part of this version.
