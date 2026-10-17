@@ -15,6 +15,7 @@ let steps = buildRosary(set, state.preferences.fatima);
 let index = 0;
 let resumeCandidate: Session | undefined = state.sessions.filter(s => s.step !== 'complete' && s.step !== 'opening-cross').sort((a, b) => b.updated - a.updated)[0];
 let noticeDismissed = false;
+let feedbackTimer: ReturnType<typeof setTimeout> | undefined;
 const cross = '<svg viewBox="0 0 24 32" fill="none" aria-hidden="true"><path d="M12 1v30M3 8h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
 const arrow = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const escape = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
@@ -89,6 +90,7 @@ function renderNotice() {
       : '<span>You’ve completed this rosary today. You’re welcome to pray again.</span><button data-action="dismiss" aria-label="Dismiss">×</button>';
 }
 function render(announce = false) {
+  clearAdvanceFeedback();
   const step = steps[index];
   const complete = !step;
   const section = step?.section ?? 7;
@@ -104,7 +106,9 @@ function render(announce = false) {
     : `<p class="prayer-context">${section > 0 && section < 6 && step.prayer ? mysteries[set].items[section - 1].title : step.bead ? ['For an increase in faith', 'For an increase in hope', 'For an increase in charity'][step.bead - 1] : step.scripture ? 'Pause to contemplate this mystery' : section === 0 ? 'Let us begin in the presence of God' : 'As we bring our prayer to a close'}</p><h1>${step.title}</h1>${step.scripture ? `<p class="scripture">${step.scripture}</p>` : ''}<div class="prayer-text ${step.scripture ? 'reflection' : ''} ${step.prayer === 'creed' || step.prayer === 'queen' || step.prayer === 'closing' ? 'long-prayer' : ''}">${escape(step.text)}</div>`;
   el('beads').innerHTML = step?.bead ? `<div class="bead-row" aria-hidden="true">${Array.from({ length: step.beads! }, (_, n) => `<span class="bead ${n + 1 < step.bead! ? 'prayed' : n + 1 === step.bead ? 'current' : ''}"></span>`).join('')}</div><p class="bead-count">Hail Mary ${step.bead} of ${step.beads}</p>` : '<div class="quiet-rule" aria-hidden="true"><span>✦</span></div>';
   el<HTMLButtonElement>('previous').disabled = index === 0;
-  el('next').innerHTML = `${complete ? 'Pray again' : index === steps.length - 1 ? 'Finish rosary' : step.scripture ? 'Begin this decade' : 'Continue'} ${arrow}`;
+  const nextLabel = complete ? 'Pray again' : index === steps.length - 1 ? 'Finish rosary' : step.scripture ? 'Begin this decade' : 'Continue';
+  el('next').innerHTML = `<span class="next-label">${nextLabel}</span>${arrow}`;
+  el('next').setAttribute('aria-label', nextLabel);
   const percent = Math.round(index / steps.length * 100);
   el('progress-fill').style.width = `${percent}%`;
   document.querySelector('.progress-track')!.setAttribute('aria-valuenow', String(percent));
@@ -118,11 +122,31 @@ function updateScrollCue() {
   const surface = document.querySelector<HTMLElement>('.prayer-surface')!;
   el('scroll-cue').hidden = surface.scrollHeight <= surface.clientHeight + 4 || surface.scrollTop + surface.clientHeight >= surface.scrollHeight - 4;
 }
-function navigate(nextIndex: number) {
+function clearAdvanceFeedback() {
+  clearTimeout(feedbackTimer);
+  feedbackTimer = undefined;
+  el('next').classList.remove('acknowledged');
+}
+function acknowledgeAdvance() {
+  const step = steps[index];
+  const button = el('next');
+  button.classList.add('acknowledged');
+  button.querySelector<HTMLElement>('.next-label')!.textContent = step?.prayer === 'mary' && step.bead
+    ? `✓ Hail Mary ${step.bead} of ${step.beads}`
+    : step ? '✓ Advanced' : '✓ Rosary complete';
+  feedbackTimer = setTimeout(() => {
+    button.classList.remove('acknowledged');
+    button.querySelector<HTMLElement>('.next-label')!.textContent = button.getAttribute('aria-label')!;
+    feedbackTimer = undefined;
+  }, 850);
+}
+function navigate(nextIndex: number, acknowledge = false) {
+  const previousIndex = index;
   index = Math.max(0, Math.min(steps.length, nextIndex));
   resumeCandidate = undefined;
   noticeDismissed = true;
   saveProgress(); render(true);
+  if (acknowledge && index > previousIndex) acknowledgeAdvance();
   document.querySelector<HTMLElement>('.prayer-surface')!.scrollTop = 0;
   updateScrollCue();
   if (!matchMedia('(max-width: 860px)').matches) el('prayer').scrollIntoView({ block: 'start', behavior: 'instant' });
@@ -141,7 +165,7 @@ function selectSet(next: MysterySet, date = localDate(), step?: string) {
   updateScrollCue();
   el('prayer').focus();
 }
-el('next').addEventListener('click', () => index === steps.length ? openDialog('restart-dialog') : navigate(index + 1));
+el('next').addEventListener('click', () => index === steps.length ? openDialog('restart-dialog') : navigate(index + 1, true));
 el('previous').addEventListener('click', () => navigate(index - 1));
 app.addEventListener('click', event => {
   const target = (event.target as HTMLElement).closest<HTMLElement>('button, a');
@@ -171,7 +195,7 @@ document.addEventListener('keydown', event => {
   if ([' ', 'Enter', 'ArrowRight', 'ArrowLeft'].includes(event.key)) {
     event.preventDefault();
     if (event.key === 'ArrowLeft') navigate(index - 1);
-    else if (index < steps.length) navigate(index + 1);
+    else if (index < steps.length) navigate(index + 1, true);
   }
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden && sessionDate !== localDate()) { noticeDismissed = false; renderNotice(); } });

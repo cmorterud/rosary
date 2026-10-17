@@ -76,11 +76,17 @@ h1 { font: 400 clamp(1.9rem, 3vw, 2.85rem)/1.22 'Libre Caslon Text', Georgia, se
 .bead { width: 11px; height: 11px; border: 1px solid var(--muted); border-radius: 50%; }
 .bead.prayed { background: var(--accent); border-color: var(--accent); }
 .bead.current { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 4px var(--paper), 0 0 0 5px var(--gold); }
+.bead.current { animation: bead-arrive .42s ease-out; }
+@keyframes bead-arrive { from { transform: scale(.55); box-shadow: 0 0 0 4px var(--paper), 0 0 0 9px var(--gold); } to { transform: scale(1); box-shadow: 0 0 0 4px var(--paper), 0 0 0 5px var(--gold); } }
 .bead-count { font-size: .77rem; color: var(--muted); margin: 0 0 10px; }
 .navigation { display: flex; align-items: center; gap: 30px; justify-content: center; margin: 24px auto 0; max-width: 530px; }
 .primary { min-height: 56px; padding: 16px 27px; background: var(--accent); color: var(--paper); border: 1px solid var(--accent); border-radius: 5px; font-size: .9rem; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 22px; }
 .primary:hover { filter: brightness(1.13); }
 #next { flex: 1; max-width: 340px; justify-content: space-between; }
+#next:active { transform: scale(.985); }
+#next.acknowledged { background: #e1cda6; border-color: #e1cda6; color: #203d4c; }
+#next.acknowledged .next-label { animation: acknowledgement .2s ease-out; }
+@keyframes acknowledgement { from { opacity: .45; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 .previous { display: flex; gap: 12px; align-items: center; font-size: .85rem; padding: 18px 5px; color: var(--muted); }
 .keyboard-hint { text-align: center; font-size: .73rem; color: var(--muted); margin: 24px 0 32px; line-height: 1.7; }
 .keyboard-hint span { margin: 0 7px; }

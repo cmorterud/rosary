@@ -41,6 +41,26 @@ test('reload offers exact saved position and settings preserve the current bead'
   await expect(page.locator('#step-count')).toHaveText('27 / 75');
 });
 
+test('each Hail Mary tap visibly acknowledges the new bead, including rapid taps', async ({ page }) => {
+  await page.setViewportSize({width: 390, height: 844});
+  await page.getByRole('button', {name: 'Journey', exact: true}).click();
+  await page.locator('#mobile-journey [data-section="1"]').click();
+  const next = page.locator('#next');
+  await next.click(); // Our Father
+  await next.click(); // Hail Mary 1
+  await next.click(); // Hail Mary 2
+  await expect(page.locator('.bead-count')).toHaveText('Hail Mary 2 of 10');
+  await expect(next).toHaveClass(/acknowledged/);
+  await expect(next).toContainText('✓ Hail Mary 2 of 10');
+  await expect(next).toHaveAttribute('aria-label', 'Continue');
+  await next.click(); // Hail Mary 3 before the feedback expires
+  await expect(page.locator('.bead-count')).toHaveText('Hail Mary 3 of 10');
+  await expect(next).toContainText('✓ Hail Mary 3 of 10');
+  await page.clock.runFor(900);
+  await expect(next).not.toHaveClass(/acknowledged/);
+  await expect(next).toContainText('Continue');
+});
+
 test('mobile navigation, mystery selection, reference, and layouts', async ({ page }) => {
   await page.setViewportSize({width: 390, height: 844});
   await page.getByRole('button', {name: 'Journey', exact: true}).click();
