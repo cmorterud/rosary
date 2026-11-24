@@ -72,6 +72,70 @@ test('Latin prayers keep your place, persist, and are marked as Latin', async ({
   expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
 });
 
+test('optional closing prayers come in order, keep your place when turned off, and persist', async ({ page }) => {
+  await page.getByRole('button', {name: 'Open settings'}).click();
+  const group = page.getByRole('group', {name: 'Optional prayers'});
+  for (const label of ['Include the Litany of Loreto', 'Include the Prayer to St. Michael', 'Pray for the Pope’s intentions']) await group.getByLabel(label).check();
+  expect((await new AxeBuilder({page}).include('#settings-dialog').analyze()).violations).toEqual([]);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#step-count')).toHaveText('1 / 85');
+  await page.locator('#journey [data-section="6"]').click();
+  const prayed: string[][] = [];
+  for (let n = 0; n < 8; n++) {
+    prayed.push([await page.locator('.prayer-context').innerText(), await page.locator('h1').innerText()]);
+    await page.keyboard.press('ArrowRight');
+  }
+  const close = 'As we bring our prayer to a close', pope = 'For the intentions of the Holy Father';
+  expect(prayed).toEqual([[close, 'Hail, Holy Queen'], [close, 'The Litany of Loreto'], [close, 'Let Us Pray'], [close, 'Prayer to St. Michael'],
+    [pope, 'Our Father'], [pope, 'Hail Mary'], [pope, 'Glory Be'], [close, 'Sign of the Cross']]);
+  await expect(page.locator('h1')).toHaveText('Go in peace.');
+  await page.locator('#journey [data-section="6"]').click();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('h1')).toHaveText('The Litany of Loreto');
+  await expect(page.locator('.prayer-text')).toContainText('Solace of Migrants, pray for us.');
+  await page.getByRole('button', {name: 'Open settings'}).click();
+  await group.getByLabel('Include the Litany of Loreto').uncheck();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('h1')).toHaveText('Let Us Pray');
+  await expect(page.locator('#step-count')).toHaveText('79 / 84');
+  await page.reload();
+  await expect(page.locator('h1')).toHaveText('Let Us Pray');
+  await page.getByRole('button', {name: 'Open settings'}).click();
+  await expect(group.getByLabel('Include the Litany of Loreto')).not.toBeChecked();
+  await expect(group.getByLabel('Include the Prayer to St. Michael')).toBeChecked();
+  await page.getByLabel('Language of the prayers').selectOption('latin');
+  await page.keyboard.press('Escape');
+  await page.locator('#next').click();
+  await expect(page.locator('h1')).toHaveText('Sancte Michaël');
+  await expect(page.locator('.prayer-text')).toHaveAttribute('lang', 'la');
+});
+
+for (const viewport of [{width: 1440, height: 900}, {width: 390, height: 844}, {width: 320, height: 568}]) {
+  test(`the long litany scrolls clear of fixed controls at ${viewport.width}px`, async ({page}) => {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => localStorage.setItem('daily-rosary-v1', JSON.stringify({version: 1, preferences: {litany: true, size: 'largest'},
+      sessions: [{date: '2026-09-26', set: 'joyful', step: 'closing-queen', updated: Date.now()}]})));
+    await page.reload();
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.locator('h1')).toHaveText('Hail, Holy Queen');
+    const next = page.locator('#next');
+    const bounds = (await next.boundingBox())!;
+    await next.click();
+    await expect(page.locator('h1')).toHaveText('The Litany of Loreto');
+    expect(await next.boundingBox()).toEqual(bounds);
+    if (viewport.width <= 860) {
+      await expect(page.locator('#scroll-cue')).toBeVisible();
+      await page.locator('.prayer-surface').evaluate(element => element.scrollTop = element.scrollHeight);
+      await expect(page.locator('#scroll-cue')).toBeHidden();
+    } else await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    expect(await next.boundingBox()).toEqual(bounds);
+    const text = (await page.locator('.prayer-text').boundingBox())!;
+    const dock = (await page.locator('.prayer-controls').boundingBox())!;
+    expect(text.y + text.height).toBeLessThanOrEqual(dock.y);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+}
+
 test('continuing straight after a reload never discards the saved place', async ({ page }) => {
   await page.locator('#journey [data-section="3"]').click();
   for (let n = 0; n < 8; n++) await page.keyboard.press('ArrowRight');
