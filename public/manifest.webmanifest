@@ -1,0 +1,16 @@
+{
+  "name": "Daily Rosary",
+  "short_name": "Rosary",
+  "description": "Pray today's rosary, one prayer at a time.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf9f6",
+  "theme_color": "#203d4c",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
