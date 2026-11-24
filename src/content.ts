@@ -44,3 +44,22 @@ export const prayers = {
   closing: { title: 'Let Us Pray', text: 'Pray for us, O holy Mother of God.\nThat we may be made worthy of the promises of Christ.\n\nO God, whose only-begotten Son, by his life, death, and resurrection, has purchased for us the rewards of eternal life, grant, we beseech thee, that while meditating on these mysteries of the most holy Rosary of the Blessed Virgin Mary, we may imitate what they contain and obtain what they promise, through the same Christ our Lord.\nAmen.' },
 };
 export type PrayerId = keyof typeof prayers;
+export type Prayer = { title: string; text: string };
+export type Language = 'english' | 'latin';
+
+// Latin follows the Common Prayers of the Compendium of the Catechism of the
+// Catholic Church (Vatican, 2005); its acute accents mark the stressed syllable
+// and are completed here where it leaves them off. The closing versicle and
+// collect are the Rosary feast's. The Fatima Prayer has no official Latin; this
+// is the common rendering closest to the Portuguese.
+export const latinPrayers: Record<PrayerId, Prayer> = {
+  cross: { title: 'Signum Crucis', text: 'In nómine Patris\net Fílii\net Spíritus Sancti.\nAmen.' },
+  creed: { title: 'Symbolum Apostolicum', text: 'Credo in Deum Patrem omnipoténtem, Creatórem cæli et terræ, et in Iesum Christum, Fílium Eius únicum, Dóminum nostrum, qui concéptus est de Spíritu Sancto, natus ex María Vírgine, passus sub Póntio Piláto, crucifíxus, mórtuus, et sepúltus, descéndit ad ínferos, tértia die resurréxit a mórtuis, ascéndit ad cælos, sedet ad déxteram Dei Patris omnipoténtis, inde ventúrus est iudicáre vivos et mórtuos.\n\nEt in Spíritum Sanctum, sanctam Ecclésiam cathólicam, sanctórum communiónem, remissiónem peccatórum, carnis resurrectiónem, vitam ætérnam. Amen.' },
+  father: { title: 'Pater Noster', text: 'Pater noster, qui es in cælis:\nsanctificétur Nomen Tuum:\nadvéniat Regnum Tuum:\nfiat volúntas Tua,\nsicut in cælo, et in terra.\n\nPanem nostrum cotidiánum da nobis hódie,\net dimítte nobis débita nostra,\nsicut et nos dimíttimus debitóribus nostris.\nEt ne nos indúcas in tentatiónem;\nsed líbera nos a Malo.\nAmen.' },
+  mary: { title: 'Ave Maria', text: 'Ave, María, grátia plena,\nDóminus tecum.\nBenedícta tu in muliéribus,\net benedíctus fructus ventris tui, Iesus.\n\nSancta María, Mater Dei,\nora pro nobis peccatóribus,\nnunc et in hora mortis nostræ.\nAmen.' },
+  glory: { title: 'Gloria Patri', text: 'Glória Patri\net Fílio\net Spirítui Sancto.\n\nSicut erat in princípio,\net nunc et semper\net in sæcula sæculórum.\nAmen.' },
+  fatima: { title: 'Oratio Fatimæ', text: 'O mi Iesu, dimítte nobis débita nostra,\nlíbera nos ab igne inférni,\nconduc in cælum omnes ánimas,\npræsértim illas quæ máxime índigent misericórdia tua.\nAmen.' },
+  queen: { title: 'Salve Regina', text: 'Salve, Regína, Mater misericórdiæ, vita, dulcédo et spes nostra, salve. Ad te clamámus, éxsules fílii Evæ. Ad te suspirámus geméntes et flentes in hac lacrimárum valle.\n\nEia ergo, advocáta nostra, illos tuos misericórdes óculos ad nos convérte. Et Iesum benedíctum fructum ventris tui, nobis, post hoc exsílium, osténde.\n\nO clemens, o pia, o dulcis Virgo María.' },
+  closing: { title: 'Oremus', text: 'Ora pro nobis, sancta Dei Génetrix.\nUt digni efficiámur promissiónibus Christi.\n\nDeus, cuius Unigénitus per vitam, mortem et resurrectiónem suam nobis salútis ætérnæ præmia comparávit, concéde, quæsumus, ut hæc mystéria sacratíssimo beátæ Maríæ Vírginis Rosário recoléntes, et imitémur quod cóntinent, et quod promíttunt assequámur. Per eúndem Christum Dóminum nostrum.\nAmen.' },
+};
+export const prayerTexts: Record<Language, Record<PrayerId, Prayer>> = { english: prayers, latin: latinPrayers };

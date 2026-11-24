@@ -1,6 +1,6 @@
 import './style.css';
-import { mysteries, prayers } from './content';
-import type { MysterySet } from './content';
+import { mysteries, prayerTexts } from './content';
+import type { MysterySet, PrayerId } from './content';
 import { buildRosary, dailyMystery, localDate, resolveStep } from './rosary';
 import type { Step } from './rosary';
 import { initialState, parseState, resumeOffer, STORAGE_KEY } from './storage';
@@ -13,7 +13,8 @@ let state = initialState();
 try { state = parseState(localStorage.getItem(STORAGE_KEY)); } catch { storageAvailable = false; }
 let set = dailyMystery();
 let sessionDate = localDate();
-let steps = buildRosary(set, state.preferences.fatima);
+const rosaryFor = (next: MysterySet) => buildRosary(next, state.preferences.fatima, state.preferences.language);
+let steps = rosaryFor(set);
 // Returning to today's rosary (after a reload, or a phone discarding the tab)
 // continues where it was left. A finished one starts again for another prayer.
 const unfinished = state.sessions.find(s => s.date === sessionDate && s.set === set && s.step !== 'complete');
@@ -54,13 +55,14 @@ app.innerHTML = `
   <dialog id="settings-dialog" aria-labelledby="settings-title"><div class="dialog-header"><span class="eyebrow">MAKE YOURSELF COMFORTABLE</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="settings-title">Prayer settings</h2>
     <label class="setting">Appearance<select id="theme"><option value="system">Use device setting</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
     <label class="setting">Prayer text size<select id="size"><option value="normal">Standard</option><option value="large">Large</option><option value="largest">Extra large</option></select></label>
+    <label class="setting">Language of the prayers<select id="language"><option value="english">English</option><option value="latin">Latin</option></select></label>
     <label class="setting checkbox-setting"><span>Include the Fatima Prayer<small>After each decade</small></span><input id="fatima" type="checkbox"></label>
     <p class="privacy-note">Your progress and preferences stay in this browser. No accounts or tracking.</p>
     <button class="text-button" data-action="restart-prompt">Start this rosary again</button>
   </dialog>
   <dialog id="restart-dialog" aria-labelledby="restart-title"><div class="dialog-header"><span class="eyebrow">A FRESH BEGINNING</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="restart-title">Start from the beginning?</h2><p>This resets your place in the current rosary. Your preferences and other rosaries stay saved.</p><div class="dialog-actions"><button class="secondary" data-close>Keep my place</button><button class="primary" data-action="restart">Start again</button></div></dialog>
-  <dialog id="prayers-dialog" class="wide-dialog" aria-labelledby="prayers-title"><div class="dialog-header"><span class="eyebrow">A PRAYER COMPANION</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="prayers-title">Prayers of the rosary</h2><p class="dialog-description">Traditional English wording. You can print this collection for use away from a screen.</p>${Object.values(prayers).map(p => `<details><summary>${p.title}</summary><p class="reference-prayer">${escape(p.text)}</p></details>`).join('')}<button class="text-button" id="print">Print prayers</button><p class="source-note">Sequence reviewed against the <a href="https://www.usccb.org/how-to-pray-the-rosary" target="_blank" rel="noopener noreferrer">USCCB rosary guide</a>. Prayer wording varies by tradition. Mystery reflections are original, brief invitations to prayer; Scripture references are provided for further reading.</p></dialog>
-  <dialog id="guide-dialog" aria-labelledby="guide-title"><div class="dialog-header"><span class="eyebrow">AT YOUR OWN PACE</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="guide-title">A little guidance</h2><p>Read each prayer, then tap Continue. Every Hail Mary has its own bead and number, so you don’t need to keep count. On a phone, longer prayers scroll within the prayer area.</p><p>On a keyboard, use Space, Enter, or the right arrow to continue. Use the left arrow to go back. When a button or menu has focus, the keyboard operates that control instead.</p><p>The journey menu lets you jump to a mystery. Your progress is saved in this browser whenever you move to another prayer.</p><p>Today’s mysteries follow your device’s local date. Advent Sundays use the Joyful Mysteries; Lent Sundays use the Sorrowful Mysteries; other Sundays use the Glorious Mysteries. You can choose another set at any time.</p><button class="primary" data-close>Return to prayer</button></dialog>
+  <dialog id="prayers-dialog" class="wide-dialog" aria-labelledby="prayers-title"><div class="dialog-header"><span class="eyebrow">A PRAYER COMPANION</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="prayers-title">Prayers of the rosary</h2><p id="reference-description" class="dialog-description"></p><div id="reference-prayers"></div><button class="text-button" id="print">Print prayers</button><p class="source-note">Sequence reviewed against the <a href="https://www.usccb.org/how-to-pray-the-rosary" target="_blank" rel="noopener noreferrer">USCCB rosary guide</a>. Prayer wording varies by tradition. Latin follows the common prayers of the Vatican’s <a href="https://www.vatican.va/archive/compendium_ccc/documents/archive_2005_compendium-ccc_en.html" target="_blank" rel="noopener noreferrer">Compendium of the Catechism</a>; the Fatima Prayer has no official Latin, so a common rendering is used. Mystery reflections are original, brief invitations to prayer; Scripture references are provided for further reading.</p></dialog>
+  <dialog id="guide-dialog" aria-labelledby="guide-title"><div class="dialog-header"><span class="eyebrow">AT YOUR OWN PACE</span><button class="close" data-close aria-label="Close">×</button></div><h2 id="guide-title">A little guidance</h2><p>Read each prayer, then tap Continue. Every Hail Mary has its own bead and number, so you don’t need to keep count. On a phone, longer prayers scroll within the prayer area. To pray in Latin, choose it in Settings.</p><p>On a keyboard, use Space, Enter, or the right arrow to continue. Use the left arrow to go back. When a button or menu has focus, the keyboard operates that control instead.</p><p>The journey menu lets you jump to a mystery. Your progress is saved in this browser whenever you move to another prayer.</p><p>Today’s mysteries follow your device’s local date. Advent Sundays use the Joyful Mysteries; Lent Sundays use the Sorrowful Mysteries; other Sundays use the Glorious Mysteries. You can choose another set at any time.</p><button class="primary" data-close>Return to prayer</button></dialog>
 `;
 
 function el<T extends HTMLElement = HTMLElement>(id: string) { return document.getElementById(id) as T; }
@@ -78,6 +80,20 @@ function applyPreferences() {
   el<HTMLSelectElement>('theme').value = state.preferences.theme;
   el<HTMLSelectElement>('size').value = state.preferences.size;
   el<HTMLInputElement>('fatima').checked = state.preferences.fatima;
+  el<HTMLSelectElement>('language').value = state.preferences.language;
+  renderReference();
+}
+function renderReference() {
+  const latin = state.preferences.language === 'latin';
+  el('reference-description').textContent = latin
+    ? 'Latin, with accents marking the stressed syllable, and the traditional English beneath. You can print this collection for use away from a screen.'
+    : 'Traditional English wording. You can print this collection for use away from a screen.';
+  el('reference-prayers').innerHTML = (Object.keys(prayerTexts.english) as PrayerId[]).map(id => {
+    const english = prayerTexts.english[id];
+    if (!latin) return `<details><summary>${english.title}</summary><p class="reference-prayer">${escape(english.text)}</p></details>`;
+    const prayer = prayerTexts.latin[id];
+    return `<details><summary><span lang="la">${prayer.title}</span> · ${english.title}</summary><p class="reference-prayer" lang="la">${escape(prayer.text)}</p><p class="reference-translation">${escape(english.text)}</p></details>`;
+  }).join('');
 }
 function dateText(date: string) {
   return new Date(`${date}T12:00:00`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -99,6 +115,8 @@ function render(announce = false) {
   const step = steps[index];
   const complete = !step;
   const section = step?.section ?? 7;
+  // Only the prayers change language; mystery reflections stay in English.
+  const lang = step?.prayer && state.preferences.language === 'latin' ? ' lang="la"' : '';
   el('set-name').innerHTML = `${mysteries[set].name}<br>Mysteries`;
   el('date-label').textContent = dateText(sessionDate);
   el('section-label').textContent = complete ? 'IN PEACE' : section === 0 ? 'OPENING PRAYERS' : section === 6 ? 'CLOSING PRAYERS' : `${mysteries[set].name.toUpperCase()} MYSTERIES · ${section} OF 5`;
@@ -108,8 +126,8 @@ function render(announce = false) {
   el('mobile-journey').innerHTML = sectionNames.map((name, n) => `<button class="mystery-option" data-section="${n}" ${n === section ? 'aria-current="step"' : ''}>${n > 0 && n < 6 ? `${n}. ` : ''}${name}</button>`).join('');
   el('prayer-content').innerHTML = complete
     ? '<p class="prayer-context">Your rosary is complete</p><h1>Go in peace.</h1><p class="completion-text">Carry this quiet moment with you<br>into the rest of your day.</p><p class="completion-date">' + dateText(sessionDate) + ' · ' + mysteries[set].name + ' Mysteries</p>'
-    : `<p class="prayer-context">${section > 0 && section < 6 && step.prayer ? mysteries[set].items[section - 1].title : step.bead ? ['For an increase in faith', 'For an increase in hope', 'For an increase in charity'][step.bead - 1] : step.scripture ? 'Pause to contemplate this mystery' : section === 0 ? 'Let us begin in the presence of God' : 'As we bring our prayer to a close'}</p><h1>${step.title}</h1>${step.scripture ? `<p class="scripture">${step.scripture}</p>` : ''}<div class="prayer-text ${step.scripture ? 'reflection' : ''} ${step.prayer === 'creed' || step.prayer === 'queen' || step.prayer === 'closing' ? 'long-prayer' : ''}">${escape(step.text)}</div>`;
-  el('beads').innerHTML = step?.bead ? `<div class="bead-row" aria-hidden="true">${Array.from({ length: step.beads! }, (_, n) => `<span class="bead ${n + 1 < step.bead! ? 'prayed' : n + 1 === step.bead ? 'current' : ''}"></span>`).join('')}</div><p class="bead-count">Hail Mary ${step.bead} of ${step.beads}</p>` : '<div class="quiet-rule" aria-hidden="true"><span>✦</span></div>';
+    : `<p class="prayer-context">${section > 0 && section < 6 && step.prayer ? mysteries[set].items[section - 1].title : step.bead ? ['For an increase in faith', 'For an increase in hope', 'For an increase in charity'][step.bead - 1] : step.scripture ? 'Pause to contemplate this mystery' : section === 0 ? 'Let us begin in the presence of God' : 'As we bring our prayer to a close'}</p><h1${lang}>${step.title}</h1>${step.scripture ? `<p class="scripture">${step.scripture}</p>` : ''}<div class="prayer-text ${step.scripture ? 'reflection' : ''} ${step.prayer === 'creed' || step.prayer === 'queen' || step.prayer === 'closing' ? 'long-prayer' : ''}"${lang}>${escape(step.text)}</div>`;
+  el('beads').innerHTML = step?.bead ? `<div class="bead-row" aria-hidden="true">${Array.from({ length: step.beads! }, (_, n) => `<span class="bead ${n + 1 < step.bead! ? 'prayed' : n + 1 === step.bead ? 'current' : ''}"></span>`).join('')}</div><p class="bead-count">${step.title} ${step.bead} of ${step.beads}</p>` : '<div class="quiet-rule" aria-hidden="true"><span>✦</span></div>';
   el<HTMLButtonElement>('previous').disabled = index === 0;
   const nextLabel = complete ? 'Pray again' : index === steps.length - 1 ? 'Finish rosary' : step.scripture ? 'Begin this decade' : 'Continue';
   el('next').innerHTML = `<span class="next-label">${nextLabel}</span>${arrow}`;
@@ -121,7 +139,7 @@ function render(announce = false) {
   el('mystery-options').innerHTML = (Object.keys(mysteries) as MysterySet[]).map(key => `<button class="mystery-option ${key === set ? 'selected' : ''}" data-set="${key}" aria-pressed="${key === set}"><span>${mysteries[key].name} Mysteries<small>${mysteries[key].days}</small></span>${key === dailyMystery() ? '<span class="today-tag">TODAY</span>' : ''}<span aria-hidden="true">${key === set ? '✓' : '↗'}</span></button>`).join('');
   renderNotice();
   updateScrollCue();
-  if (announce) el('announcement').textContent = complete ? 'Rosary complete. Go in peace.' : `${sectionNames[section]}. ${step.title}.${step.bead ? ` Hail Mary ${step.bead} of ${step.beads}.` : ''}`;
+  if (announce) el('announcement').textContent = complete ? 'Rosary complete. Go in peace.' : `${sectionNames[section]}. ${step.title}.${step.bead ? ` ${step.bead} of ${step.beads}.` : ''}`;
 }
 function updateScrollCue() {
   const surface = document.querySelector<HTMLElement>('.prayer-surface')!;
@@ -139,7 +157,7 @@ function acknowledgeAdvance(finished: Step) {
   button.classList.add('acknowledged');
   button.querySelector<HTMLElement>('.next-label')!.textContent = index === steps.length
     ? '✓ Rosary complete'
-    : finished.prayer === 'mary' && finished.bead ? `✓ Hail Mary ${finished.bead} of ${finished.beads}` : '✓ Advanced';
+    : finished.prayer === 'mary' && finished.bead ? `✓ ${finished.title} ${finished.bead} of ${finished.beads}` : '✓ Advanced';
   feedbackTimer = setTimeout(() => {
     button.classList.remove('acknowledged');
     button.querySelector<HTMLElement>('.next-label')!.textContent = button.getAttribute('aria-label')!;
@@ -163,7 +181,7 @@ function openDialog(id: string) {
   closeDialogs(); el<HTMLDialogElement>(id).showModal();
 }
 function selectSet(next: MysterySet, date = localDate(), step?: string) {
-  set = next; sessionDate = date; steps = buildRosary(set, state.preferences.fatima);
+  set = next; sessionDate = date; steps = rosaryFor(set);
   const saved = state.sessions.find(s => s.set === set && s.date === sessionDate);
   index = resolveStep(steps, step ?? saved?.step ?? 'opening-cross');
   resumeCandidate = undefined; noticeDismissed = false;
@@ -190,10 +208,10 @@ app.addEventListener('click', event => {
     case 'restart': closeDialogs(); navigate(0); el('prayer').focus(); break;
   }
 });
-for (const id of ['theme', 'size', 'fatima'] as const) el(id).addEventListener('change', () => {
+for (const id of ['theme', 'size', 'fatima', 'language'] as const) el(id).addEventListener('change', () => {
   const currentId = steps[index]?.id ?? 'complete';
-  state.preferences = { theme: el<HTMLSelectElement>('theme').value as typeof state.preferences.theme, size: el<HTMLSelectElement>('size').value as typeof state.preferences.size, fatima: el<HTMLInputElement>('fatima').checked };
-  steps = buildRosary(set, state.preferences.fatima); index = resolveStep(steps, currentId);
+  state.preferences = { theme: el<HTMLSelectElement>('theme').value as typeof state.preferences.theme, size: el<HTMLSelectElement>('size').value as typeof state.preferences.size, fatima: el<HTMLInputElement>('fatima').checked, language: el<HTMLSelectElement>('language').value as typeof state.preferences.language };
+  steps = rosaryFor(set); index = resolveStep(steps, currentId);
   persist(); applyPreferences(); render();
 });
 document.addEventListener('keydown', event => {

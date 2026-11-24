@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildRosary, dailyMystery, localDate, resolveStep } from './rosary';
 import { parseState, resumeOffer } from './storage';
 import type { Session } from './storage';
+import { latinPrayers, prayers } from './content';
 import type { MysterySet } from './content';
 
 describe('daily mysteries', () => {
@@ -70,11 +71,31 @@ describe('prayer sequence', () => {
     expect(resolveStep(short, 'complete')).toBe(short.length);
   });
 });
+describe('Latin prayers', () => {
+  const shape = (set: MysterySet, fatima: boolean, language?: 'latin') => buildRosary(set, fatima, language).map(s => [s.id, s.section, s.prayer, s.bead, s.beads]);
+  it('pray the same steps as English, so switching keeps your place', () => {
+    expect(Object.keys(latinPrayers)).toEqual(Object.keys(prayers));
+    for (const set of ['joyful', 'luminous', 'sorrowful', 'glorious'] as MysterySet[]) for (const fatima of [true, false])
+      expect(shape(set, fatima, 'latin')).toEqual(shape(set, fatima));
+  });
+  it('change only the prayers, never the mysteries', () => {
+    const steps = buildRosary('joyful', true, 'latin');
+    expect(steps.slice(0, 7).map(s => s.title)).toEqual(['Signum Crucis', 'Symbolum Apostolicum', 'Pater Noster', 'Ave Maria', 'Ave Maria', 'Ave Maria', 'Gloria Patri']);
+    expect(steps.slice(-3).map(s => s.title)).toEqual(['Salve Regina', 'Oremus', 'Signum Crucis']);
+    expect(steps.find(s => s.id === 'decade-1-mystery')).toMatchObject({ title: 'The Annunciation', scripture: 'Luke 1:26–38' });
+    expect(steps.find(s => s.id === 'decade-1-mary-1')!.text).toMatch(/^Ave, María, grátia plena,/);
+  });
+  it('use only characters the bundled Latin-1 font subset can show', () => {
+    for (const prayer of Object.values(latinPrayers)) expect(prayer.title + prayer.text).toMatch(/^[\n\x20-\x7e\xa0-\xff]+$/);
+  });
+});
 describe('saved progress validation', () => {
   it('recovers safely from corrupted and incompatible storage', () => {
     for (const raw of ['{oops', 'null', '[]', '{"version":2}']) expect(parseState(raw).sessions).toEqual([]);
   });
   it('rejects malformed sessions and keeps valid preferences', () => {
+    expect(parseState(JSON.stringify({version: 1, preferences: {language: 'latin'}})).preferences.language).toBe('latin');
+    expect(parseState(JSON.stringify({version: 1, preferences: {language: 'klingon'}})).preferences.language).toBe('english');
     const state = parseState(JSON.stringify({version: 1, preferences: {theme: 'dark', size: 'wrong', fatima: false}, sessions: [
       {date: '2026-09-26', set: 'joyful', step: 'decade-2-mary-5', updated: 1},
       {date: '2026-09-26', set: '__proto__', step: 'opening-cross', updated: 1},
@@ -82,7 +103,7 @@ describe('saved progress validation', () => {
       {date: '2026-09-26', set: 'joyful', step: '<script>', updated: 1},
     ]}));
     expect(state.sessions).toHaveLength(1);
-    expect(state.preferences).toEqual({theme: 'dark', size: 'normal', fatima: false});
+    expect(state.preferences).toEqual({theme: 'dark', size: 'normal', fatima: false, language: 'english'});
   });
 });
 describe('resume offer', () => {

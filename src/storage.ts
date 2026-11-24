@@ -1,15 +1,15 @@
 import { mysteries } from './content';
-import type { MysterySet } from './content';
+import type { Language, MysterySet } from './content';
 import { localDate } from './rosary';
 
 export const STORAGE_KEY = 'daily-rosary-v1';
 export type Session = { date: string; set: MysterySet; step: string; updated: number };
 export type State = {
   version: 1;
-  preferences: { theme: 'system' | 'light' | 'dark'; size: 'normal' | 'large' | 'largest'; fatima: boolean };
+  preferences: { theme: 'system' | 'light' | 'dark'; size: 'normal' | 'large' | 'largest'; fatima: boolean; language: Language };
   sessions: Session[];
 };
-export const initialState = (): State => ({ version: 1, preferences: { theme: 'system', size: 'normal', fatima: true }, sessions: [] });
+export const initialState = (): State => ({ version: 1, preferences: { theme: 'system', size: 'normal', fatima: true, language: 'english' }, sessions: [] });
 export function parseState(raw: string | null): State {
   const clean = initialState();
   try {
@@ -19,6 +19,7 @@ export function parseState(raw: string | null): State {
     if (['system', 'light', 'dark'].includes(p.theme)) clean.preferences.theme = p.theme;
     if (['normal', 'large', 'largest'].includes(p.size)) clean.preferences.size = p.size;
     if (typeof p.fatima === 'boolean') clean.preferences.fatima = p.fatima;
+    if (['english', 'latin'].includes(p.language)) clean.preferences.language = p.language;
     if (Array.isArray(value.sessions)) clean.sessions = value.sessions.filter((s: Session) =>
       s && typeof s.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s.date) &&
       Object.hasOwn(mysteries, s.set) && typeof s.step === 'string' &&
