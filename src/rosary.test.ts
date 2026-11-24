@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildRosary, dailyMystery, localDate, resolveStep } from './rosary';
+import type { RosaryOptions } from './rosary';
 import { parseState, resumeOffer } from './storage';
 import type { Session } from './storage';
 import { latinPrayers, prayers } from './content';
@@ -63,27 +64,63 @@ describe('prayer sequence', () => {
     });
   }
   it('preserves position when optional prayers change, including a removed current prayer', () => {
-    const short = buildRosary('joyful', false);
+    const short = buildRosary('joyful', { fatima: false });
     expect(short).toHaveLength(75);
     expect(short[resolveStep(short, 'decade-3-mary-8')].id).toBe('decade-3-mary-8');
     expect(short[resolveStep(short, 'decade-2-fatima')].id).toBe('decade-3-mystery');
     expect(short[resolveStep(short, 'decade-5-fatima')].id).toBe('closing-queen');
     expect(resolveStep(short, 'complete')).toBe(short.length);
   });
+  it('adds the optional closing prayers in their traditional places', () => {
+    const steps = buildRosary('sorrowful', { litany: true, michael: true, pope: true });
+    expect(steps).toHaveLength(85);
+    expect(new Set(steps.map(s => s.id)).size).toBe(85);
+    expect(steps.filter(s => s.section === 6).map(s => [s.id, s.title])).toEqual([
+      ['closing-queen', 'Hail, Holy Queen'], ['closing-litany', 'The Litany of Loreto'], ['closing-prayer', 'Let Us Pray'],
+      ['closing-michael', 'Prayer to St. Michael'], ['closing-pope-father', 'Our Father'], ['closing-pope-mary', 'Hail Mary'],
+      ['closing-pope-glory', 'Glory Be'], ['closing-cross', 'Sign of the Cross'],
+    ]);
+    // Prayed once each, not counted as beads.
+    expect(steps.filter(s => s.id.startsWith('closing-pope-')).map(s => [s.context, s.bead])).toEqual(Array(3).fill(['For the intentions of the Holy Father', undefined]));
+    expect(buildRosary('sorrowful').filter(s => s.section === 6).map(s => s.id)).toEqual(['closing-queen', 'closing-prayer', 'closing-cross']);
+  });
+  it('continues with the next prayer when the current optional prayer is turned off', () => {
+    const steps = buildRosary('glorious', { pope: true });
+    const at = (id: string) => steps[resolveStep(steps, id)].id;
+    expect(at('closing-litany')).toBe('closing-prayer');
+    expect(at('closing-michael')).toBe('closing-pope-father');
+    expect(at('closing-pope-father')).toBe('closing-pope-father');
+    const plain = buildRosary('glorious');
+    for (const id of ['closing-michael', 'closing-pope-father', 'closing-pope-mary', 'closing-pope-glory']) expect(plain[resolveStep(plain, id)].id).toBe('closing-cross');
+    expect(resolveStep(plain, 'not-a-step')).toBe(0);
+  });
+  it('names the virtue of each opening Hail Mary', () => {
+    expect(buildRosary('joyful').filter(s => s.section === 0 && s.bead).map(s => s.context)).toEqual(['For an increase in faith', 'For an increase in hope', 'For an increase in charity']);
+  });
 });
 describe('Latin prayers', () => {
-  const shape = (set: MysterySet, fatima: boolean, language?: 'latin') => buildRosary(set, fatima, language).map(s => [s.id, s.section, s.prayer, s.bead, s.beads]);
+  const shape = (set: MysterySet, options: Partial<RosaryOptions>) => buildRosary(set, options).map(s => [s.id, s.section, s.prayer, s.bead, s.beads, s.context]);
   it('pray the same steps as English, so switching keeps your place', () => {
     expect(Object.keys(latinPrayers)).toEqual(Object.keys(prayers));
-    for (const set of ['joyful', 'luminous', 'sorrowful', 'glorious'] as MysterySet[]) for (const fatima of [true, false])
-      expect(shape(set, fatima, 'latin')).toEqual(shape(set, fatima));
+    for (const set of ['joyful', 'luminous', 'sorrowful', 'glorious'] as MysterySet[]) for (const fatima of [true, false]) for (const extras of [false, true]) {
+      const options = { fatima, litany: extras, michael: extras, pope: extras };
+      expect(shape(set, { ...options, language: 'latin' })).toEqual(shape(set, options));
+    }
   });
   it('change only the prayers, never the mysteries', () => {
-    const steps = buildRosary('joyful', true, 'latin');
+    const steps = buildRosary('joyful', { language: 'latin' });
     expect(steps.slice(0, 7).map(s => s.title)).toEqual(['Signum Crucis', 'Symbolum Apostolicum', 'Pater Noster', 'Ave Maria', 'Ave Maria', 'Ave Maria', 'Gloria Patri']);
     expect(steps.slice(-3).map(s => s.title)).toEqual(['Salve Regina', 'Oremus', 'Signum Crucis']);
     expect(steps.find(s => s.id === 'decade-1-mystery')).toMatchObject({ title: 'The Annunciation', scripture: 'Luke 1:26–38' });
     expect(steps.find(s => s.id === 'decade-1-mary-1')!.text).toMatch(/^Ave, María, grátia plena,/);
+  });
+  it('keep the litany parallel to the English, invocation for invocation', () => {
+    const groups = (text: string) => text.split('\n\n').map(group => group.split('\n').length);
+    expect(groups(latinPrayers.litany.text)).toEqual(groups(prayers.litany.text));
+    expect(groups(prayers.litany.text)).toEqual([5, 4, 3, 14, 6, 18, 13, 3]);
+    // The 2020 invocations, each in its appointed place.
+    expect(latinPrayers.litany.text).toMatch(/Mater Ecclésiæ, ora pro nobis\.\nMater misericórdiæ,[^]*Mater divínæ grátiæ, ora pro nobis\.\nMater spei,[^]*Refúgium peccatórum, ora pro nobis\.\nSolácium migrántium,/);
+    expect(prayers.litany.text).toMatch(/Mother of the Church, pray for us\.\nMother of Mercy,[^]*Mother of divine grace, pray for us\.\nMother of Hope,[^]*Refuge of sinners, pray for us\.\nSolace of Migrants,/);
   });
   it('use only characters the bundled Latin-1 font subset can show', () => {
     for (const prayer of Object.values(latinPrayers)) expect(prayer.title + prayer.text).toMatch(/^[\n\x20-\x7e\xa0-\xff]+$/);
@@ -96,6 +133,8 @@ describe('saved progress validation', () => {
   it('rejects malformed sessions and keeps valid preferences', () => {
     expect(parseState(JSON.stringify({version: 1, preferences: {language: 'latin'}})).preferences.language).toBe('latin');
     expect(parseState(JSON.stringify({version: 1, preferences: {language: 'klingon'}})).preferences.language).toBe('english');
+    expect(parseState(JSON.stringify({version: 1, preferences: {litany: true, michael: 'yes', pope: true}})).preferences).toMatchObject({fatima: true, litany: true, michael: false, pope: true});
+    expect(parseState(JSON.stringify({version: 1, sessions: ['closing-litany', 'closing-michael', 'closing-pope-mary', 'closing-pope-hope'].map(step => ({date: '2026-09-26', set: 'joyful', step, updated: 1}))})).sessions.map(s => s.step)).toEqual(['closing-litany', 'closing-michael', 'closing-pope-mary']);
     const state = parseState(JSON.stringify({version: 1, preferences: {theme: 'dark', size: 'wrong', fatima: false}, sessions: [
       {date: '2026-09-26', set: 'joyful', step: 'decade-2-mary-5', updated: 1},
       {date: '2026-09-26', set: '__proto__', step: 'opening-cross', updated: 1},
@@ -103,7 +142,7 @@ describe('saved progress validation', () => {
       {date: '2026-09-26', set: 'joyful', step: '<script>', updated: 1},
     ]}));
     expect(state.sessions).toHaveLength(1);
-    expect(state.preferences).toEqual({theme: 'dark', size: 'normal', fatima: false, language: 'english'});
+    expect(state.preferences).toEqual({theme: 'dark', size: 'normal', fatima: false, litany: false, michael: false, pope: false, language: 'english'});
   });
 });
 describe('resume offer', () => {

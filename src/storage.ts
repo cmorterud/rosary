@@ -1,15 +1,17 @@
 import { mysteries } from './content';
-import type { Language, MysterySet } from './content';
+import type { MysterySet } from './content';
 import { localDate } from './rosary';
+import type { RosaryOptions } from './rosary';
 
 export const STORAGE_KEY = 'daily-rosary-v1';
 export type Session = { date: string; set: MysterySet; step: string; updated: number };
 export type State = {
   version: 1;
-  preferences: { theme: 'system' | 'light' | 'dark'; size: 'normal' | 'large' | 'largest'; fatima: boolean; language: Language };
+  preferences: { theme: 'system' | 'light' | 'dark'; size: 'normal' | 'large' | 'largest' } & RosaryOptions;
   sessions: Session[];
 };
-export const initialState = (): State => ({ version: 1, preferences: { theme: 'system', size: 'normal', fatima: true, language: 'english' }, sessions: [] });
+export const optionalPrayers = ['fatima', 'litany', 'michael', 'pope'] as const;
+export const initialState = (): State => ({ version: 1, preferences: { theme: 'system', size: 'normal', fatima: true, litany: false, michael: false, pope: false, language: 'english' }, sessions: [] });
 export function parseState(raw: string | null): State {
   const clean = initialState();
   try {
@@ -18,12 +20,12 @@ export function parseState(raw: string | null): State {
     const p = value.preferences ?? {};
     if (['system', 'light', 'dark'].includes(p.theme)) clean.preferences.theme = p.theme;
     if (['normal', 'large', 'largest'].includes(p.size)) clean.preferences.size = p.size;
-    if (typeof p.fatima === 'boolean') clean.preferences.fatima = p.fatima;
+    for (const prayer of optionalPrayers) if (typeof p[prayer] === 'boolean') clean.preferences[prayer] = p[prayer];
     if (['english', 'latin'].includes(p.language)) clean.preferences.language = p.language;
     if (Array.isArray(value.sessions)) clean.sessions = value.sessions.filter((s: Session) =>
       s && typeof s.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s.date) &&
       Object.hasOwn(mysteries, s.set) && typeof s.step === 'string' &&
-      /^(opening-(cross|creed|father|mary-[1-3]|glory)|decade-[1-5]-(mystery|father|mary-([1-9]|10)|glory|fatima)|closing-(queen|prayer|cross)|complete)$/.test(s.step) &&
+      /^(opening-(cross|creed|father|mary-[1-3]|glory)|decade-[1-5]-(mystery|father|mary-([1-9]|10)|glory|fatima)|closing-(queen|litany|prayer|michael|pope-(father|mary|glory)|cross)|complete)$/.test(s.step) &&
       Number.isFinite(s.updated)).slice(-32);
   } catch { /* Corrupted or old storage must never stop someone from praying. */ }
   return clean;
