@@ -21,16 +21,19 @@ test('complete rosary with keyboard, backtracking, and restart confirmation', as
   await page.getByRole('button', {name: 'Pray again', exact: true}).click();
   await page.getByRole('button', {name: 'Keep my place'}).click();
   await expect(page.locator('h1')).toHaveText('Go in peace.');
+  await page.reload(); // A finished rosary is ready to be prayed again.
+  await expect(page.locator('h1')).toHaveText('Sign of the Cross');
+  await expect(page.locator('#notice')).toContainText('You’ve completed this rosary today.');
   expect(errors).toEqual([]);
 });
 
-test('reload offers exact saved position and settings preserve the current bead', async ({ page }) => {
+test('reload returns to the exact saved position and settings preserve the current bead', async ({ page }) => {
   await page.locator('#journey [data-section="2"]').click();
   for (let n = 0; n < 6; n++) await page.keyboard.press('ArrowRight');
   await expect(page.locator('.bead-count')).toHaveText('Hail Mary 5 of 10');
   await page.reload();
-  await page.getByRole('button', {name: 'Continue where I left off'}).click();
   await expect(page.locator('.bead-count')).toHaveText('Hail Mary 5 of 10');
+  await expect(page.locator('#notice')).toBeHidden();
   await page.getByRole('button', {name: 'Open settings'}).click();
   await page.getByLabel('Include the Fatima Prayer').uncheck();
   await page.getByLabel('Appearance').selectOption('dark');
@@ -39,6 +42,44 @@ test('reload offers exact saved position and settings preserve the current bead'
   await expect(page.locator('.bead-count')).toHaveText('Hail Mary 5 of 10');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.locator('#step-count')).toHaveText('27 / 75');
+});
+
+test('continuing straight after a reload never discards the saved place', async ({ page }) => {
+  await page.locator('#journey [data-section="3"]').click();
+  for (let n = 0; n < 8; n++) await page.keyboard.press('ArrowRight');
+  await expect(page.locator('.bead-count')).toHaveText('Hail Mary 7 of 10');
+  await page.reload(); // As when a phone discards the tab in the background.
+  await page.locator('#next').click();
+  await expect(page.locator('.bead-count')).toHaveText('Hail Mary 8 of 10');
+  await page.reload();
+  await expect(page.locator('.bead-count')).toHaveText('Hail Mary 8 of 10');
+});
+
+test('the screen stays awake while praying, then locks as usual', async ({ page }) => {
+  await page.addInitScript(() => {
+    const log: string[] = [];
+    Object.assign(window, { wakeLog: log });
+    Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: { request: async () => {
+      log.push('request');
+      const sentinel = new EventTarget();
+      return Object.assign(sentinel, { released: false, type: 'screen', release: async () => { log.push('release'); sentinel.dispatchEvent(new Event('release')); } });
+    } } });
+  });
+  await page.reload();
+  const log = () => page.evaluate(() => (window as unknown as { wakeLog: string[] }).wakeLog);
+  await expect(page.locator('h1')).toHaveText('Sign of the Cross');
+  expect(await log()).toEqual([]); // Opening the page alone never holds the screen on.
+  await page.locator('#next').click();
+  await page.locator('#next').click();
+  await expect.poll(log).toEqual(['request']);
+  await page.clock.runFor(5 * 60 * 1000); // Stepped away from the prayer.
+  await expect.poll(log).toEqual(['request', 'release']);
+  await page.locator('#next').click();
+  await expect.poll(log).toEqual(['request', 'release', 'request']);
+  await page.locator('#journey [data-section="6"]').click();
+  for (let n = 0; n < 3; n++) await page.locator('#next').click();
+  await expect(page.locator('h1')).toHaveText('Go in peace.');
+  await expect.poll(log).toEqual(['request', 'release', 'request', 'release']);
 });
 
 test('each Hail Mary tap visibly acknowledges the new bead, including rapid taps', async ({ page }) => {

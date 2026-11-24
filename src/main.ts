@@ -2,8 +2,9 @@ import './style.css';
 import { mysteries, prayers } from './content';
 import type { MysterySet } from './content';
 import { buildRosary, dailyMystery, localDate, resolveStep } from './rosary';
-import { initialState, parseState, STORAGE_KEY } from './storage';
+import { initialState, parseState, resumeOffer, STORAGE_KEY } from './storage';
 import type { Session } from './storage';
+import { keepAwake } from './wakeLock';
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 let storageAvailable = true;
@@ -12,8 +13,11 @@ try { state = parseState(localStorage.getItem(STORAGE_KEY)); } catch { storageAv
 let set = dailyMystery();
 let sessionDate = localDate();
 let steps = buildRosary(set, state.preferences.fatima);
-let index = 0;
-let resumeCandidate: Session | undefined = state.sessions.filter(s => s.step !== 'complete' && s.step !== 'opening-cross').sort((a, b) => b.updated - a.updated)[0];
+// Returning to today's rosary (after a reload, or a phone discarding the tab)
+// continues where it was left. A finished one starts again for another prayer.
+const unfinished = state.sessions.find(s => s.date === sessionDate && s.set === set && s.step !== 'complete');
+let index = resolveStep(steps, unfinished?.step ?? 'opening-cross');
+let resumeCandidate: Session | undefined = resumeOffer(state.sessions, { date: sessionDate, set });
 let noticeDismissed = false;
 let feedbackTimer: ReturnType<typeof setTimeout> | undefined;
 const cross = '<svg viewBox="0 0 24 32" fill="none" aria-hidden="true"><path d="M12 1v30M3 8h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
@@ -146,6 +150,7 @@ function navigate(nextIndex: number, acknowledge = false) {
   resumeCandidate = undefined;
   noticeDismissed = true;
   saveProgress(); render(true);
+  keepAwake(index < steps.length);
   if (acknowledge && index > previousIndex) acknowledgeAdvance();
   document.querySelector<HTMLElement>('.prayer-surface')!.scrollTop = 0;
   updateScrollCue();
@@ -161,6 +166,7 @@ function selectSet(next: MysterySet, date = localDate(), step?: string) {
   index = resolveStep(steps, step ?? saved?.step ?? 'opening-cross');
   resumeCandidate = undefined; noticeDismissed = false;
   closeDialogs(); render(true);
+  keepAwake(index < steps.length);
   document.querySelector<HTMLElement>('.prayer-surface')!.scrollTop = 0;
   updateScrollCue();
   el('prayer').focus();

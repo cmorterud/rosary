@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildRosary, dailyMystery, localDate, resolveStep } from './rosary';
-import { parseState } from './storage';
+import { parseState, resumeOffer } from './storage';
+import type { Session } from './storage';
 import type { MysterySet } from './content';
 
 describe('daily mysteries', () => {
@@ -82,5 +83,30 @@ describe('saved progress validation', () => {
     ]}));
     expect(state.sessions).toHaveLength(1);
     expect(state.preferences).toEqual({theme: 'dark', size: 'normal', fatima: false});
+  });
+});
+describe('resume offer', () => {
+  const now = new Date(2026, 10, 23, 9);
+  const today = { date: '2026-11-23', set: 'joyful' as const };
+  const session = (date: string, set: MysterySet, step: string, updated: Date): Session => ({ date, set, step, updated: updated.getTime() });
+  const onScreen = session('2026-11-23', 'joyful', 'decade-3-mary-7', new Date(2026, 10, 23, 8, 30));
+  const yesterday = session('2026-11-22', 'sorrowful', 'decade-2-mary-3', new Date(2026, 10, 22, 21));
+  const otherSetToday = session('2026-11-23', 'luminous', 'decade-1-father', new Date(2026, 10, 23, 8));
+
+  it('offers the most recent other unfinished rosary, never the one on screen', () => {
+    expect(resumeOffer([yesterday, otherSetToday, onScreen], today, now)).toBe(otherSetToday);
+    expect(resumeOffer([yesterday, onScreen], today, now)).toBe(yesterday);
+    expect(resumeOffer([onScreen], today, now)).toBeUndefined();
+  });
+  it('skips finished, unstarted, and abandoned rosaries', () => {
+    expect(resumeOffer([
+      session('2026-11-22', 'sorrowful', 'complete', new Date(2026, 10, 22, 21)),
+      session('2026-11-22', 'glorious', 'opening-cross', new Date(2026, 10, 22, 21)),
+      session('2026-11-02', 'joyful', 'decade-4-glory', new Date(2026, 10, 21, 23, 59)),
+    ], today, now)).toBeUndefined();
+  });
+  it('keeps offering an older rosary while it is still being prayed', () => {
+    const decadeADay = session('2026-11-20', 'glorious', 'decade-3-mystery', new Date(2026, 10, 22, 0, 0));
+    expect(resumeOffer([decadeADay], today, now)).toBe(decadeADay);
   });
 });

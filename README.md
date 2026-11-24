@@ -20,7 +20,8 @@ Open the URL printed by Vite. For browser tests, install Google Chrome, then run
 - The homepage chooses mysteries by the visitor's local date. Sundays use Joyful during Advent, Sorrowful during Lent, and Glorious otherwise; any set can be selected manually.
 - All opening prayers, five decades (one step per Hail Mary), optional Fatima prayers, and closing prayers are included.
 - Continue or tap the next button; Space, Enter, and Right Arrow advance while Left Arrow goes back when focus is on the prayer page. Focused controls retain native keyboard behavior.
-- Each date and mystery set has its own saved position. Returning visitors can resume explicitly; the homepage still defaults to today's mysteries.
+- Each date and mystery set has its own saved position. The homepage defaults to today's mysteries and returns to the place in an unfinished one (a finished one starts again). Another unfinished rosary prayed today or yesterday can be resumed explicitly; older abandoned ones are no longer offered.
+- While praying, the screen is kept awake (Screen Wake Lock, where supported). After five minutes without moving to another prayer, or once the rosary is complete, the device's normal auto-lock returns.
 - Text size, light/dark/system appearance, and optional prayers are configurable. Disabling Fatima preserves the current prayer by stable ID.
 - Storage is local to the browser, with no account, tracking, or backend. Blocked storage is handled with an explanatory message. The most recent 32 sessions are retained.
 - Desktop sidebar and mobile Journey menu allow jumping between mysteries; prayers can be read and printed from the reference dialog.
@@ -33,7 +34,7 @@ The sequence and mystery schedule were reviewed against the [USCCB rosary guide]
 
 1. Create a public GitHub repository (e.g. `rosary`) and push this project on `main`.
 2. In the repository's **Settings → Pages**, choose **GitHub Actions** as the source.
-3. Run **Test and deploy to GitHub Pages** from Actions (or push to `main`). It tests, builds, and publishes `dist/`.
+3. Run **Test and deploy to GitHub Pages** from Actions (or push to `main`). It runs the unit and Playwright browser tests, builds, and publishes `dist/`; pull requests run the same checks without deploying.
 4. The site is available at [rosaryonline.org](https://rosaryonline.org/); the GitHub Pages project URL redirects there.
 
 Relative asset URLs work on the repository subpath and at the custom domain root. There is no client-side URL router, so page refreshes do not require server rewrite rules. The custom domain and HTTPS are configured in GitHub Pages settings.
