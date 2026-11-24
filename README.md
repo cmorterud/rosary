@@ -13,7 +13,7 @@ npm test
 npm run build
 ```
 
-Open the URL printed by Vite. For browser tests, install Google Chrome, then run `npm run test:e2e`. Screenshots are written to the ignored `test-results/` directory.
+Open the URL printed by Vite. For browser tests, install Google Chrome, then run `npm run test:e2e`; it starts the dev server and a production build (`vite preview` on port 4173, for the offline tests). Screenshots are written to the ignored `test-results/` directory.
 
 ## Prayer experience
 
@@ -25,6 +25,14 @@ Open the URL printed by Vite. For browser tests, install Google Chrome, then run
 - Text size, light/dark/system appearance, prayer language (English or Latin), and optional prayers are configurable. Turning an optional prayer on or off, or switching language, preserves the current prayer by stable ID; turning off the prayer on screen continues with the next one. In Latin, only the prayers change: mystery titles, reflections, and the interface stay in English, and the reference dialog shows each Latin prayer with the English beneath.
 - Storage is local to the browser, with no account, tracking, or backend. Blocked storage is handled with an explanatory message. The most recent 32 sessions are retained.
 - Desktop sidebar and mobile Journey menu allow jumping between mysteries; prayers can be read and printed from the reference dialog.
+
+## Offline and install
+
+After the first visit the site works without a connection, and it can be installed to a home screen or desktop (`public/manifest.webmanifest`, with icons from `scripts/generate-share-assets.mjs`).
+
+- The build writes `sw.js` from `src/service-worker.js`, listing every built file except the share image and WOFF fonts (every browser that runs a service worker reads WOFF2). Its cache name is a hash of those files and the worker itself, so each deploy changes the worker.
+- The worker answers from its cache first, so the site opens instantly even on a weak signal. Opening the page, or returning to an installed app, checks for a new worker; it saves the new files, deletes the old cache, and the next visit uses the new version.
+- Saved files are matched by address alone (`ignoreVary`), so a server's `Vary` header cannot make the cached script and styles miss. Development (`npm run dev`) never registers the worker.
 
 ## Prayer sources
 
@@ -41,4 +49,4 @@ Relative asset URLs work on the repository subpath and at the custom domain root
 
 The social preview and 180px touch icon are committed under `public/`. Regenerate them after a brand change with `node scripts/generate-share-assets.mjs` (requires Google Chrome). The page's Open Graph metadata uses the deployed `https://rosaryonline.org/` address.
 
-Libre Caslon Text and DM Sans are bundled locally with the site; there are no third-party font requests or analytics. Offline/PWA support, audio, and accounts are not part of this version.
+Libre Caslon Text and DM Sans are bundled locally with the site; there are no third-party font requests or analytics. Audio and accounts are not part of this version.
