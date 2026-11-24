@@ -22,13 +22,13 @@ Open the URL printed by Vite. For browser tests, install Google Chrome, then run
 - Continue or tap the next button; Space, Enter, and Right Arrow advance while Left Arrow goes back when focus is on the prayer page. Focused controls retain native keyboard behavior.
 - Each date and mystery set has its own saved position. The homepage defaults to today's mysteries and returns to the place in an unfinished one (a finished one starts again). Another unfinished rosary prayed today or yesterday can be resumed explicitly; older abandoned ones are no longer offered.
 - While praying, the screen is kept awake (Screen Wake Lock, where supported). After five minutes without moving to another prayer, or once the rosary is complete, the device's normal auto-lock returns.
-- Text size, light/dark/system appearance, and optional prayers are configurable. Disabling Fatima preserves the current prayer by stable ID.
+- Text size, light/dark/system appearance, prayer language (English or Latin), and optional prayers are configurable. Disabling Fatima or switching language preserves the current prayer by stable ID. In Latin, only the prayers change: mystery titles, reflections, and the interface stay in English, and the reference dialog shows each Latin prayer with the English beneath.
 - Storage is local to the browser, with no account, tracking, or backend. Blocked storage is handled with an explanatory message. The most recent 32 sessions are retained.
 - Desktop sidebar and mobile Journey menu allow jumping between mysteries; prayers can be read and printed from the reference dialog.
 
 ## Prayer sources
 
-The sequence and mystery schedule were reviewed against the [USCCB rosary guide](https://www.usccb.org/how-to-pray-the-rosary). Traditional English prayer wording is used (including “thee” and “thy”); common versions differ. The short mystery reflections are original. Scripture references are citations, not quotations; Revelation 12 is explicitly presented as a traditional meditation for the Marian mysteries, not a direct narrative of the Assumption.
+The sequence and mystery schedule were reviewed against the [USCCB rosary guide](https://www.usccb.org/how-to-pray-the-rosary). Traditional English prayer wording is used (including “thee” and “thy”); common versions differ. The Latin follows the common prayers of the Vatican's [Compendium of the Catechism](https://www.vatican.va/archive/compendium_ccc/documents/archive_2005_compendium-ccc_en.html) (ecclesiastical spelling, with acute accents marking the stressed syllable); the closing versicle and collect are those of the Rosary feast, and the Fatima Prayer, which has no official Latin, uses the common rendering closest to the Portuguese. Latin text stays within Latin-1 so the bundled font subset covers every character. The short mystery reflections are original. Scripture references are citations, not quotations; Revelation 12 is explicitly presented as a traditional meditation for the Marian mysteries, not a direct narrative of the Assumption.
 
 ## Deploy to GitHub Pages
 

@@ -1,5 +1,5 @@
-import { mysteries, prayers } from './content';
-import type { MysterySet, PrayerId } from './content';
+import { mysteries, prayerTexts } from './content';
+import type { Language, MysterySet, PrayerId } from './content';
 
 export type Step = {
   id: string; title: string; text: string; section: number;
@@ -45,10 +45,11 @@ export function dailyMystery(date = new Date()): MysterySet {
   }
   return (['glorious', 'joyful', 'sorrowful', 'glorious', 'luminous', 'sorrowful', 'joyful'] as const)[date.getDay()];
 }
-export function buildRosary(set: MysterySet, fatima = true): Step[] {
+// Step ids do not depend on the language, so switching it keeps your place.
+export function buildRosary(set: MysterySet, fatima = true, language: Language = 'english'): Step[] {
   const steps: Step[] = [];
   const add = (id: string, prayer: PrayerId, section: number, bead?: number, beads?: number) =>
-    steps.push({ id, prayer, section, bead, beads, ...prayers[prayer] });
+    steps.push({ id, prayer, section, bead, beads, ...prayerTexts[language][prayer] });
   add('opening-cross', 'cross', 0);
   add('opening-creed', 'creed', 0);
   add('opening-father', 'father', 0);

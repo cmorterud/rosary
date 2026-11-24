@@ -44,6 +44,34 @@ test('reload returns to the exact saved position and settings preserve the curre
   await expect(page.locator('#step-count')).toHaveText('27 / 75');
 });
 
+test('Latin prayers keep your place, persist, and are marked as Latin', async ({ page }) => {
+  await page.locator('#journey [data-section="2"]').click();
+  for (let n = 0; n < 6; n++) await page.keyboard.press('ArrowRight');
+  await expect(page.locator('.bead-count')).toHaveText('Hail Mary 5 of 10');
+  await page.getByRole('button', {name: 'Open settings'}).click();
+  await page.getByLabel('Language of the prayers').selectOption('latin');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('h1')).toHaveText('Ave Maria');
+  await expect(page.locator('h1')).toHaveAttribute('lang', 'la');
+  await expect(page.locator('.prayer-text')).toHaveAttribute('lang', 'la');
+  await expect(page.locator('.prayer-text')).toContainText('Ave, María, grátia plena');
+  await expect(page.locator('.bead-count')).toHaveText('Ave Maria 5 of 10');
+  await expect(page.locator('#step-count')).toHaveText('28 / 80');
+  await page.locator('#next').click();
+  await expect(page.locator('#next')).toContainText('✓ Ave Maria 5 of 10');
+  await page.reload();
+  await expect(page.locator('.bead-count')).toHaveText('Ave Maria 6 of 10');
+  await page.locator('#journey [data-section="3"]').click(); // Mysteries stay in English.
+  await expect(page.locator('h1')).toHaveText('The Nativity');
+  await expect(page.locator('h1')).not.toHaveAttribute('lang');
+  await page.getByRole('button', {name: 'Prayers & guide'}).click();
+  await page.locator('#prayers-dialog summary', {hasText: 'Pater Noster'}).click();
+  await expect(page.locator('#prayers-dialog details[open] .reference-prayer')).toHaveAttribute('lang', 'la');
+  await expect(page.locator('#prayers-dialog details[open] .reference-prayer')).toContainText('Pater noster, qui es in cælis');
+  await expect(page.locator('#prayers-dialog details[open] .reference-translation')).toContainText('Our Father, who art in heaven');
+  expect((await new AxeBuilder({page}).analyze()).violations).toEqual([]);
+});
+
 test('continuing straight after a reload never discards the saved place', async ({ page }) => {
   await page.locator('#journey [data-section="3"]').click();
   for (let n = 0; n < 8; n++) await page.keyboard.press('ArrowRight');
