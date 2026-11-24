@@ -148,7 +148,6 @@ summary { cursor: pointer; padding: 18px 0; font-size: .98rem; }
   .sidebar-intro h2 br { display: block; }
   .mobile-mysteries { display: block; padding: 12px 0; font-size: inherit; }
   .sidebar-intro h2 { font: 500 .84rem/1.4 'DM Sans', sans-serif; margin: 0; }
-  .sidebar-intro h2 br::after { content: ' '; }
   .change-button { justify-content: end; font-size: .72rem; gap: 10px; padding: 7px 0 0; }
   .workspace { margin-left: 0; padding-inline: 28px; min-height: 0; flex: 1; overflow: hidden; }
   .topbar { min-height: 72px; flex: none; }
@@ -171,8 +170,6 @@ summary { cursor: pointer; padding: 18px 0; font-size: .98rem; }
   .prayer-surface { padding-inline: 0; }
   .prayer-layout { padding-block: 10px; }
   .prayer-emblem { display: none; }
-  .prayer-emblem { width: 51px; height: 51px; margin-bottom: 23px; }
-  .prayer-emblem svg { height: 25px; }
   h1 { font-size: 2rem; margin-bottom: 12px; }
   .prayer-text { font-size: calc(var(--prayer-size) * .84); line-height: 1.55; }
   .prayer-text.long-prayer { font-size: calc(var(--prayer-size) * .76); line-height: 1.65; }

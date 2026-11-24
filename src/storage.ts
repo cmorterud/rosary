@@ -1,5 +1,6 @@
 import { mysteries } from './content';
 import type { MysterySet } from './content';
+import { localDate } from './rosary';
 
 export const STORAGE_KEY = 'daily-rosary-v1';
 export type Session = { date: string; set: MysterySet; step: string; updated: number };
@@ -25,4 +26,14 @@ export function parseState(raw: string | null): State {
       Number.isFinite(s.updated)).slice(-32);
   } catch { /* Corrupted or old storage must never stop someone from praying. */ }
   return clean;
+}
+
+// The rosary on screen already restores its own place, so offer the most recent
+// other unfinished rosary. Only one prayed today or yesterday is offered: an
+// abandoned rosary should not greet every later visit.
+export function resumeOffer(sessions: Session[], current: { date: string; set: MysterySet }, now = new Date()): Session | undefined {
+  const yesterday = localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+  return sessions
+    .filter(s => s.step !== 'complete' && s.step !== 'opening-cross' && !(s.date === current.date && s.set === current.set) && localDate(new Date(s.updated)) >= yesterday)
+    .sort((a, b) => b.updated - a.updated)[0];
 }
