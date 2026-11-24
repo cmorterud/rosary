@@ -2,6 +2,7 @@ import './style.css';
 import { mysteries, prayers } from './content';
 import type { MysterySet } from './content';
 import { buildRosary, dailyMystery, localDate, resolveStep } from './rosary';
+import type { Step } from './rosary';
 import { initialState, parseState, resumeOffer, STORAGE_KEY } from './storage';
 import type { Session } from './storage';
 import { keepAwake } from './wakeLock';
@@ -131,13 +132,14 @@ function clearAdvanceFeedback() {
   feedbackTimer = undefined;
   el('next').classList.remove('acknowledged');
 }
-function acknowledgeAdvance() {
-  const step = steps[index];
+// Confirm the prayer just finished: a check beside the bead that is only now
+// beginning would read as though it had already been prayed.
+function acknowledgeAdvance(finished: Step) {
   const button = el('next');
   button.classList.add('acknowledged');
-  button.querySelector<HTMLElement>('.next-label')!.textContent = step?.prayer === 'mary' && step.bead
-    ? `✓ Hail Mary ${step.bead} of ${step.beads}`
-    : step ? '✓ Advanced' : '✓ Rosary complete';
+  button.querySelector<HTMLElement>('.next-label')!.textContent = index === steps.length
+    ? '✓ Rosary complete'
+    : finished.prayer === 'mary' && finished.bead ? `✓ Hail Mary ${finished.bead} of ${finished.beads}` : '✓ Advanced';
   feedbackTimer = setTimeout(() => {
     button.classList.remove('acknowledged');
     button.querySelector<HTMLElement>('.next-label')!.textContent = button.getAttribute('aria-label')!;
@@ -151,7 +153,7 @@ function navigate(nextIndex: number, acknowledge = false) {
   noticeDismissed = true;
   saveProgress(); render(true);
   keepAwake(index < steps.length);
-  if (acknowledge && index > previousIndex) acknowledgeAdvance();
+  if (acknowledge && index > previousIndex) acknowledgeAdvance(steps[previousIndex]);
   document.querySelector<HTMLElement>('.prayer-surface')!.scrollTop = 0;
   updateScrollCue();
   if (!matchMedia('(max-width: 860px)').matches) el('prayer').scrollIntoView({ block: 'start', behavior: 'instant' });
